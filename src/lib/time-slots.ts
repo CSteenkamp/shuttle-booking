@@ -10,7 +10,8 @@ export function generateTimeSlots(
   date: Date,
   startHour: number = 7,
   endHour: number = 18,
-  intervalMinutes: number = 20
+  intervalMinutes: number = 20,
+  customDuration?: number // Duration in minutes for specific destinations
 ): TimeSlot[] {
   const slots: TimeSlot[] = []
   const startOfSelectedDay = startOfDay(date)
@@ -28,16 +29,26 @@ export function generateTimeSlots(
   const endTime = new Date(startOfSelectedDay)
   endTime.setHours(endHour, 0, 0, 0)
   
+  // Use custom duration if provided, otherwise use interval
+  const slotDuration = customDuration || intervalMinutes
+  
   while (isBefore(currentTime, endTime)) {
-    const slotEnd = addMinutes(currentTime, intervalMinutes)
+    const slotEnd = addMinutes(currentTime, slotDuration)
+    
+    // Make sure the slot end doesn't exceed the end hour
+    if (isAfter(slotEnd, endTime)) {
+      break
+    }
     
     slots.push({
       startTime: new Date(currentTime),
       endTime: new Date(slotEnd),
-      label: `${format(currentTime, 'HH:mm')} - ${format(slotEnd, 'HH:mm')}`,
+      label: `${format(currentTime, 'HH:mm')} - ${format(slotEnd, 'HH:mm')}${customDuration ? ` (${customDuration}min)` : ''}`,
     })
     
-    currentTime = slotEnd
+    // For custom durations, move to next available slot based on interval
+    // For regular slots, use the slot duration as interval
+    currentTime = customDuration ? addMinutes(currentTime, intervalMinutes) : slotEnd
   }
   
   return slots
@@ -61,9 +72,10 @@ export function getNextAvailableSlot(
   startHour: number = 8,
   endHour: number = 18,
   intervalMinutes: number = 20,
-  cutoffMinutes: number = 30
+  cutoffMinutes: number = 30,
+  customDuration?: number
 ): TimeSlot | null {
-  const slots = generateTimeSlots(date, startHour, endHour, intervalMinutes)
+  const slots = generateTimeSlots(date, startHour, endHour, intervalMinutes, customDuration)
   
   for (const slot of slots) {
     if (isSlotAvailable(slot.startTime, cutoffMinutes)) {

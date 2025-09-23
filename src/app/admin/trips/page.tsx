@@ -26,6 +26,8 @@ interface Location {
   address: string
   isFrequent: boolean
   category?: string
+  defaultDuration?: number
+  baseCost?: number
 }
 
 export default function TripsManagement() {
@@ -47,9 +49,17 @@ export default function TripsManagement() {
 
   useEffect(() => {
     const date = new Date(selectedDate)
-    const slots = generateTimeSlots(date)
+    
+    // Get the selected destination's duration if available
+    let customDuration: number | undefined
+    if (selectedDestination && selectedDestination !== 'custom') {
+      const destination = locations.find(loc => loc.id === selectedDestination)
+      customDuration = destination?.defaultDuration
+    }
+    
+    const slots = generateTimeSlots(date, 7, 18, 20, customDuration)
     setTimeSlots(slots)
-  }, [selectedDate])
+  }, [selectedDate, selectedDestination, locations])
 
   useEffect(() => {
     fetchTrips()
@@ -83,7 +93,18 @@ export default function TripsManagement() {
     try {
       const requestBody: any = {
         startTime: slot.startTime.toISOString(),
-        endTime: slot.endTime.toISOString(),
+      }
+
+      // Get the selected destination to check if it has defaultDuration
+      let hasDefaultDuration = false
+      if (selectedDestination && selectedDestination !== 'custom') {
+        const destination = locations.find(loc => loc.id === selectedDestination)
+        hasDefaultDuration = !!destination?.defaultDuration
+      }
+
+      // Only send endTime if destination doesn't have defaultDuration
+      if (!hasDefaultDuration) {
+        requestBody.endTime = slot.endTime.toISOString()
       }
 
       if (selectedDestination === 'custom') {
@@ -224,7 +245,7 @@ export default function TripsManagement() {
                           .filter(loc => loc.isFrequent)
                           .map(location => (
                             <option key={location.id} value={location.id} className="py-2">
-                              🏢 {location.name}
+                              🏢 {location.name}{location.defaultDuration ? ` (${location.defaultDuration}min)` : ''}
                             </option>
                           ))
                         }
@@ -268,6 +289,27 @@ export default function TripsManagement() {
                     </p>
                   </div>
                 )}
+                
+                {/* Show destination duration info */}
+                {selectedDestination && selectedDestination !== 'custom' && (() => {
+                  const destination = locations.find(loc => loc.id === selectedDestination)
+                  if (destination?.defaultDuration) {
+                    return (
+                      <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl border-2 border-blue-200 dark:border-blue-600">
+                        <div className="flex items-center text-blue-700 dark:text-blue-300">
+                          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="font-semibold">Trip Duration: {destination.defaultDuration} minutes</span>
+                        </div>
+                        <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                          Time slots will automatically book the full {destination.defaultDuration}-minute duration for this destination.
+                        </p>
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
               </div>
               
               <div>

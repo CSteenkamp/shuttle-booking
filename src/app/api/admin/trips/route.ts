@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     const { destinationId, customDestination, startTime, endTime, maxPassengers } = await request.json()
 
-    if ((!destinationId && !customDestination) || !startTime || !endTime) {
+    if ((!destinationId && !customDestination) || !startTime) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     let finalDestinationId = destinationId;
+    let calculatedEndTime = endTime;
 
     // If custom destination, create it first
     if (!destinationId && customDestination) {
@@ -38,11 +39,36 @@ export async function POST(request: NextRequest) {
       finalDestinationId = customLoc.id;
     }
 
+    // Get destination details to check for default duration
+    const destination = await prisma.location.findUnique({
+      where: { id: finalDestinationId }
+    });
+
+    if (!destination) {
+      return NextResponse.json(
+        { error: 'Destination not found' },
+        { status: 404 }
+      )
+    }
+
+    // Calculate endTime based on destination's defaultDuration if available
+    if (destination.defaultDuration && !endTime) {
+      const startDate = new Date(startTime);
+      const endDate = new Date(startDate.getTime() + destination.defaultDuration * 60000); // Convert minutes to milliseconds
+      calculatedEndTime = endDate.toISOString();
+      console.log(`[TRIP CREATION] Auto-calculated endTime for ${destination.name}: ${destination.defaultDuration} minutes (${startTime} -> ${calculatedEndTime})`);
+    } else if (!calculatedEndTime) {
+      return NextResponse.json(
+        { error: 'End time is required for destinations without default duration' },
+        { status: 400 }
+      )
+    }
+
     // Check if ANY trip already exists for this time slot (destination is locked)
     const existingTrip = await prisma.trip.findFirst({
       where: {
         startTime: new Date(startTime),
-        endTime: new Date(endTime),
+        endTime: new Date(calculatedEndTime),
       },
       include: {
         destination: true,
@@ -69,7 +95,7 @@ export async function POST(request: NextRequest) {
       data: {
         destinationId: finalDestinationId,
         startTime: new Date(startTime),
-        endTime: new Date(endTime),
+        endTime: new Date(calculatedEndTime),
         maxPassengers: maxPassengers || 4,
         currentPassengers: 0,
         status: 'SCHEDULED',
