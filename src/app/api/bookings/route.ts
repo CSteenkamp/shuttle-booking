@@ -5,6 +5,7 @@ import { sendBookingConfirmation } from '@/lib/email'
 import { createBookingConfirmation } from '@/lib/notifications'
 import { AuditLogger } from '@/lib/audit'
 import { createBookingWithCalendarSync } from '@/lib/booking-integration'
+import { calculateTripCost } from '@/lib/pricing'
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
     const trip = await prisma.trip.findUnique({
       where: { id: tripId },
       include: {
+        destination: true,
         bookings: {
           where: { status: 'CONFIRMED' }
         }
@@ -78,21 +80,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculate current passengers
+    // Calculate current passengers and new total
     const currentPassengers = trip.bookings.reduce((total, booking) => {
       return total + booking.passengerCount
     }, 0)
+    const newTotalPassengers = currentPassengers + passengerCount
 
     // Check if enough seats available
-    if (currentPassengers + passengerCount > trip.maxPassengers) {
+    if (newTotalPassengers > trip.maxPassengers) {
       return NextResponse.json(
         { error: 'Not enough seats available' },
         { status: 400 }
       )
     }
 
+    // Calculate dynamic pricing
+    const pricingInfo = await calculateTripCost(trip.destinationId, newTotalPassengers)
+    const totalCost = pricingInfo ? pricingInfo.costPerPerson : passengerCount // fallback to old system
+
+    console.log(`[BOOKING API] Trip to ${trip.destination.name}: ${currentPassengers} -> ${newTotalPassengers} passengers, cost: R${totalCost}`)
+
     // Check credit balance (admins have unlimited credits)
-    const totalCost = passengerCount
     let creditBalance = null
 
     if (session.user.role !== 'ADMIN') {

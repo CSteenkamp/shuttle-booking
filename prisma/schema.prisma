@@ -101,10 +101,14 @@ model Location {
   isFrequent      Boolean        @default(false)
   category        String?        @default("other")
   status          LocationStatus @default(APPROVED)
+  // New pricing fields
+  defaultDuration Int?           // Duration in minutes for trips to this destination
+  baseCost        Int?           // Base cost in credits (R1 = 1 credit) for single passenger
   createdAt       DateTime       @default(now())
   dropoffBookings Booking[]      @relation("DropoffLocation")
   pickupBookings  Booking[]      @relation("PickupLocation")
   trips           Trip[]
+  pricingTiers    PricingTier[]
 
   @@map("locations")
 }
@@ -135,7 +139,8 @@ model Booking {
   pickupSavedAddressId String?
   dropoffLocationId String
   passengerCount    Int           @default(1)
-  creditsCost       Int
+  creditsCost       Int           // Cost paid in credits (R1 = 1 credit)
+  originalCost      Int?          // Original cost when first booked (for refund tracking)
   status            BookingStatus @default(CONFIRMED)
   notes             String?
   createdAt         DateTime      @default(now())
@@ -149,6 +154,17 @@ model Booking {
   notifications     Notification[]
 
   @@map("bookings")
+}
+
+model PricingTier {
+  id           String   @id @default(cuid())
+  locationId   String
+  passengerCount Int    // Number of passengers (1-4)
+  costPerPerson Int     // Cost per person in credits for this passenger count
+  location     Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  
+  @@unique([locationId, passengerCount])
+  @@map("pricing_tiers")
 }
 
 model Settings {
@@ -188,6 +204,7 @@ enum TransactionType {
   PURCHASE
   USAGE
   REFUND
+  REFUND_ADJUSTMENT  // For retroactive price reductions
   ADMIN_ADJUSTMENT
 }
 

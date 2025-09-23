@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import { checkTimeSlotAvailability } from '@/lib/availability-checker'
 import { GoogleCalendarService, getGoogleCalendarCredentials, type GoogleCalendarEvent } from '@/lib/google-calendar'
+import { calculateTripCost } from '@/lib/pricing'
+import { processRetroactiveRefunds, sendRefundNotifications } from '@/lib/retroactive-refunds'
 
 export interface BookingAvailabilityCheck {
   available: boolean
@@ -56,14 +58,39 @@ export async function createBookingWithCalendarSync(
   }
 ): Promise<{ success: boolean; bookingId?: string; error?: string; warning?: string }> {
   try {
-    // Get trip details for availability check
+    // Get trip details with current bookings
     const trip = await prisma.trip.findUnique({
       where: { id: bookingData.tripId },
-      include: { destination: true }
+      include: { 
+        destination: true,
+        bookings: {
+          where: { status: 'CONFIRMED' }
+        }
+      }
     })
 
     if (!trip) {
       return { success: false, error: 'Trip not found' }
+    }
+
+    // Calculate current passenger count and new total
+    const currentPassengerCount = trip.bookings.reduce(
+      (sum, booking) => sum + booking.passengerCount, 
+      0
+    )
+    const newTotalPassengers = currentPassengerCount + bookingData.passengerCount
+
+    console.log(`[BOOKING] Current passengers: ${currentPassengerCount}, New total: ${newTotalPassengers}`)
+
+    // Calculate dynamic pricing based on new passenger count
+    const pricingInfo = await calculateTripCost(trip.destinationId, newTotalPassengers)
+    
+    if (!pricingInfo) {
+      console.log('[BOOKING] No dynamic pricing found, using provided cost')
+    } else {
+      console.log(`[BOOKING] Dynamic pricing: R${pricingInfo.costPerPerson} per person (was R${bookingData.creditsCost})`)
+      // Update the booking cost with dynamic pricing
+      bookingData.creditsCost = pricingInfo.costPerPerson
     }
 
     // Check availability before creating booking
@@ -112,6 +139,30 @@ export async function createBookingWithCalendarSync(
 
       return newBooking
     })
+
+    // Process retroactive refunds if there are existing bookings and dynamic pricing
+    let refundWarning: string | undefined
+    if (currentPassengerCount > 0 && pricingInfo) {
+      try {
+        console.log('[REFUNDS] Processing retroactive refunds...')
+        const refundResult = await processRetroactiveRefunds(bookingData.tripId, booking.id)
+        
+        if (refundResult.success && refundResult.refundsProcessed > 0) {
+          console.log(`[REFUNDS] ✅ Processed ${refundResult.refundsProcessed} refunds totaling R${refundResult.totalRefunded}`)
+          
+          // Send notifications about refunds
+          await sendRefundNotifications(refundResult.refundDetails)
+          
+          refundWarning = `${refundResult.refundsProcessed} existing passenger(s) received R${refundResult.totalRefunded} in total refunds due to price reduction.`
+        } else if (refundResult.errors.length > 0) {
+          console.error('[REFUNDS] Refund processing had errors:', refundResult.errors)
+          refundWarning = 'Some refunds could not be processed automatically.'
+        }
+      } catch (refundError) {
+        console.error('[REFUNDS] Error processing retroactive refunds:', refundError)
+        refundWarning = 'Automatic refunds could not be processed.'
+      }
+    }
 
     // Attempt trip-level calendar sync (don't fail booking if this fails)
     try {
@@ -244,10 +295,13 @@ export async function createBookingWithCalendarSync(
         : 'Booking created successfully but calendar sync failed.'
     }
 
+    // Combine warnings
+    const combinedWarning = [warning, refundWarning].filter(Boolean).join(' ')
+
     return { 
       success: true, 
       bookingId: booking.id,
-      warning
+      warning: combinedWarning || undefined
     }
 
   } catch (error) {
