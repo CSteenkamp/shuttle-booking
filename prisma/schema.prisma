@@ -1,0 +1,370 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  password           String?
+  name               String?
+  phone              String?
+  role               UserRole            @default(CUSTOMER)
+  status             UserStatus          @default(ACTIVE)
+  emailVerified      Boolean             @default(false)
+  emailVerificationToken String?         @unique
+  emailVerificationExpires DateTime?
+  defaultPickupLocationId String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  bookings                Booking[]
+  creditBalance           CreditBalance?
+  creditTransactions      CreditTransaction[]
+  riders                  Rider[]
+  notifications           Notification[]
+  notificationPreferences NotificationPreferences?
+  announcements           SystemAnnouncement[]
+  auditLogs               AuditLog[]
+  savedAddresses          SavedAddress[]
+  defaultPickupLocation   SavedAddress?       @relation("DefaultPickupLocation", fields: [defaultPickupLocationId], references: [id])
+
+  @@map("users")
+}
+
+model SavedAddress {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String   // e.g., "Home", "Work", "School"
+  address     String
+  latitude    Float?
+  longitude   Float?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultPickupUsers User[] @relation("DefaultPickupLocation")
+  pickupBookings Booking[] @relation("PickupSavedAddress")
+
+  @@map("saved_addresses")
+}
+
+model Rider {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  phone     String?
+  relationship String? // e.g., "Child", "Dependent", "Spouse"
+  dateOfBirth DateTime?
+  medicalInfo String? // Medical conditions, allergies, medications
+  emergencyContact String? // Emergency contact name and phone
+  notes     String? // Additional notes for drivers/staff
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@map("riders")
+}
+
+model CreditBalance {
+  id      String @id @default(cuid())
+  userId  String @unique
+  credits Int    @default(0)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("credit_balances")
+}
+
+model CreditTransaction {
+  id          String          @id @default(cuid())
+  userId      String
+  type        TransactionType
+  amount      Int
+  description String?
+  createdAt   DateTime        @default(now())
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("credit_transactions")
+}
+
+model Location {
+  id              String         @id @default(cuid())
+  name            String
+  address         String
+  latitude        Float?
+  longitude       Float?
+  isFrequent      Boolean        @default(false)
+  category        String?        @default("other")
+  status          LocationStatus @default(APPROVED)
+  createdAt       DateTime       @default(now())
+  dropoffBookings Booking[]      @relation("DropoffLocation")
+  pickupBookings  Booking[]      @relation("PickupLocation")
+  trips           Trip[]
+
+  @@map("locations")
+}
+
+model Trip {
+  id                String     @id @default(cuid())
+  destinationId     String
+  startTime         DateTime
+  endTime           DateTime
+  maxPassengers     Int        @default(4)
+  currentPassengers Int        @default(0)
+  status            TripStatus @default(SCHEDULED)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  bookings          Booking[]
+  destination       Location   @relation(fields: [destinationId], references: [id])
+  notifications     Notification[]
+
+  @@map("trips")
+}
+
+model Booking {
+  id                String        @id @default(cuid())
+  userId            String
+  tripId            String
+  riderId           String?
+  pickupLocationId  String?
+  pickupSavedAddressId String?
+  dropoffLocationId String
+  passengerCount    Int           @default(1)
+  creditsCost       Int
+  status            BookingStatus @default(CONFIRMED)
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  dropoffLocation   Location      @relation("DropoffLocation", fields: [dropoffLocationId], references: [id])
+  pickupLocation    Location?     @relation("PickupLocation", fields: [pickupLocationId], references: [id])
+  pickupSavedAddress SavedAddress? @relation("PickupSavedAddress", fields: [pickupSavedAddressId], references: [id])
+  rider             Rider?        @relation(fields: [riderId], references: [id])
+  trip              Trip          @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notifications     Notification[]
+
+  @@map("bookings")
+}
+
+model Settings {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model CreditPackage {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  credits   Int
+  price     Float
+  isPopular Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("credit_packages")
+}
+
+enum UserRole {
+  ADMIN
+  CUSTOMER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum TransactionType {
+  PURCHASE
+  USAGE
+  REFUND
+  ADMIN_ADJUSTMENT
+}
+
+enum TripStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum LocationStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMATION
+  TRIP_REMINDER
+  TRIP_UPDATE
+  PAYMENT_CONFIRMATION
+  SYSTEM_ANNOUNCEMENT
+  ADMIN_MESSAGE
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Notification {
+  id          String               @id @default(cuid())
+  title       String
+  message     String
+  type        NotificationType
+  priority    NotificationPriority @default(MEDIUM)
+  status      NotificationStatus   @default(UNREAD)
+  
+  // Relations
+  userId      String
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Optional relations for context
+  bookingId   String?
+  booking     Booking?             @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  tripId      String?
+  trip        Trip?                @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  
+  // Metadata
+  data        Json?                // Additional data for the notification
+  actionUrl   String?              // URL for notification action
+  
+  // Email/SMS tracking
+  emailSent   Boolean              @default(false)
+  emailSentAt DateTime?
+  smsSent     Boolean              @default(false)
+  smsSentAt   DateTime?
+  
+  // Timestamps
+  createdAt   DateTime             @default(now())
+  readAt      DateTime?
+  archivedAt  DateTime?
+  
+  @@index([userId, status])
+  @@index([type, createdAt])
+  @@index([priority, createdAt])
+}
+
+model NotificationPreferences {
+  id                    String  @id @default(cuid())
+  userId                String  @unique
+  user                  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Email preferences
+  emailEnabled          Boolean @default(true)
+  bookingConfirmations  Boolean @default(true)
+  tripReminders         Boolean @default(true)
+  tripUpdates           Boolean @default(true)
+  paymentNotifications  Boolean @default(true)
+  systemAnnouncements   Boolean @default(true)
+  adminMessages         Boolean @default(true)
+  
+  // SMS preferences
+  smsEnabled            Boolean @default(false)
+  smsBookingConfirms    Boolean @default(false)
+  smsTripReminders      Boolean @default(false)
+  smsTripUpdates        Boolean @default(false)
+  smsPaymentNotifs      Boolean @default(false)
+  
+  // Push notification preferences
+  pushEnabled           Boolean @default(true)
+  pushBookingConfirms   Boolean @default(true)
+  pushTripReminders     Boolean @default(true)
+  pushTripUpdates       Boolean @default(true)
+  pushPaymentNotifs     Boolean @default(true)
+  
+  // Timing preferences
+  reminderHours         Int     @default(24) // Hours before trip for reminder
+  secondReminderMinutes Int     @default(60) // Minutes before trip for second reminder
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model SystemAnnouncement {
+  id            String               @id @default(cuid())
+  title         String
+  message       String
+  priority      NotificationPriority @default(MEDIUM)
+  
+  // Targeting
+  targetRole    UserRole?            // If null, targets all users
+  active        Boolean              @default(true)
+  
+  // Display options
+  showOnLogin   Boolean              @default(false)
+  showInApp     Boolean              @default(true)
+  sendEmail     Boolean              @default(false)
+  sendSms       Boolean              @default(false)
+  
+  // Scheduling
+  publishAt     DateTime             @default(now())
+  expiresAt     DateTime?
+  
+  // Metadata
+  createdBy     String
+  creator       User                 @relation(fields: [createdBy], references: [id])
+  
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  
+  @@index([active, publishAt])
+  @@index([targetRole, active])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Action details
+  action      String   // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+  resource    String   // bookings, trips, users, settings, etc.
+  resourceId  String?  // ID of the affected resource
+  
+  // Changes tracking
+  oldValues   Json?    // Previous values (for updates/deletes)
+  newValues   Json?    // New values (for creates/updates)
+  
+  // Request context
+  ipAddress   String?
+  userAgent   String?
+  method      String?  // GET, POST, PUT, DELETE
+  path        String?  // API endpoint path
+  
+  // Metadata
+  success     Boolean  @default(true)
+  errorMessage String?
+  description String?  // Human-readable description
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([userId, createdAt])
+  @@index([resource, action])
+  @@index([createdAt])
+}
