@@ -277,6 +277,16 @@ export default function SignIn() {
                   )}
                 </button>
 
+                {/* Forgot Password Link */}
+                <div className="text-center">
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 font-medium transition-colors duration-200"
+                  >
+                    Forgot your password?
+                  </Link>
+                </div>
+
                 {/* Divider */}
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
