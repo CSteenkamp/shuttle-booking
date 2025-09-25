@@ -12,6 +12,8 @@ interface Booking {
   passengerCount: number
   creditsCost: number
   createdAt: string
+  guestName: string | null
+  guestPhone: string | null
   user: {
     id: string
     name: string | null
@@ -309,10 +311,10 @@ export default function BookingAdministration() {
                     
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900 dark:text-white">
-                        {booking.rider ? booking.rider.name : (booking.user.name || 'Account holder')}
+                        {booking.guestName || booking.rider?.name || booking.user.name || 'Account holder'}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {booking.rider ? 'Family member' : 'Account holder'}
+                        {booking.guestName ? `Guest${booking.guestPhone ? ' • ' + booking.guestPhone : ''}` : (booking.rider ? 'Family member' : 'Account holder')}
                       </div>
                     </td>
                     

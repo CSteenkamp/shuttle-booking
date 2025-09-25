@@ -3,7 +3,7 @@
 import { useTheme } from '@/components/providers/ThemeProvider'
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, mounted } = useTheme()
 
   const toggleTheme = () => {
     if (theme === 'dark') {
@@ -13,10 +13,24 @@ export function ThemeToggle() {
     }
   }
 
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <button
+        className="p-2 rounded-lg opacity-0 pointer-events-none transition-opacity duration-200"
+        aria-label="Toggle theme"
+      >
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+        </svg>
+      </button>
+    )
+  }
+
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+      className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 opacity-100"
       aria-label="Toggle theme"
     >
       {theme === 'dark' ? (

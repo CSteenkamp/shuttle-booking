@@ -35,11 +35,17 @@ export async function calculateTripCost(
       throw new Error(`Destination with ID ${destinationId} not found`)
     }
 
-    // If no pricing tiers exist, fall back to simple credit system (1 credit per passenger)
+    // If no pricing tiers exist, fall back to default short trip pricing
     if (!destination.pricingTiers || destination.pricingTiers.length === 0) {
+      // Get default pricing from settings
+      const defaultSetting = await prisma.settings.findUnique({
+        where: { key: 'default_short_trip_credits' }
+      })
+      const defaultCredits = defaultSetting ? parseInt(defaultSetting.value) : 30
+      
       return {
-        costPerPerson: 1,
-        totalCost: currentPassengerCount,
+        costPerPerson: defaultCredits,
+        totalCost: defaultCredits * currentPassengerCount,
         passengerCount: currentPassengerCount,
         destinationName: destination.name
       }

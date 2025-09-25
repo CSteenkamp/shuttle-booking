@@ -19,6 +19,7 @@ interface Location {
     trips: number
     pickupBookings: number
     dropoffBookings: number
+    pricingTiers?: number
   }
 }
 
@@ -170,11 +171,19 @@ export default function LocationManagement() {
     }
   }
 
-  const deleteLocation = async (locationId: string) => {
-    if (!confirm('Are you sure you want to delete this location? This action cannot be undone.')) return
+  const deleteLocation = async (locationId: string, force: boolean = false) => {
+    const confirmMessage = force 
+      ? 'Are you sure you want to FORCE DELETE this location? This will also delete its pricing tiers. This action cannot be undone.'
+      : 'Are you sure you want to delete this location? This action cannot be undone.'
+    
+    if (!confirm(confirmMessage)) return
 
     try {
-      const response = await fetch(`/api/admin/locations/${locationId}`, {
+      const url = force 
+        ? `/api/admin/locations/${locationId}?force=true`
+        : `/api/admin/locations/${locationId}`
+        
+      const response = await fetch(url, {
         method: 'DELETE',
       })
 
@@ -183,7 +192,19 @@ export default function LocationManagement() {
         fetchLocations()
       } else {
         const errorData = await response.json()
-        alert(`Failed to delete location: ${errorData.error}`)
+        
+        // If deletion failed but force delete is available, offer the option
+        if (errorData.canForceDelete && !force) {
+          const forceDelete = confirm(
+            `${errorData.error}\n\nThis location only has pricing tiers blocking deletion. Would you like to force delete it (this will remove the pricing tiers)?`
+          )
+          
+          if (forceDelete) {
+            return deleteLocation(locationId, true)
+          }
+        } else {
+          alert(`Failed to delete location: ${errorData.error}`)
+        }
       }
     } catch (error) {
       console.error('Error deleting location:', error)
@@ -366,6 +387,8 @@ export default function LocationManagement() {
           {filteredLocations.map((location) => {
             const categoryInfo = getCategoryInfo(location.category || 'other')
             const totalUsage = location._count.trips + location._count.pickupBookings + location._count.dropoffBookings
+            const criticalUsage = location._count.trips + location._count.pickupBookings + location._count.dropoffBookings // Without pricing tiers
+            const hasPricingTiers = (location._count.pricingTiers || 0) > 0
 
             return (
               <div key={location.id} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-xl transition-all duration-200">
@@ -391,6 +414,9 @@ export default function LocationManagement() {
                   <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                     <span>🚐 {location._count.trips} trips</span>
                     <span>📍 {location._count.pickupBookings + location._count.dropoffBookings} bookings</span>
+                    {hasPricingTiers && (
+                      <span>💰 {location._count.pricingTiers} pricing tiers</span>
+                    )}
                   </div>
                 </div>
 
@@ -401,13 +427,22 @@ export default function LocationManagement() {
                   >
                     Edit
                   </button>
-                  {totalUsage === 0 && (
+                  {criticalUsage === 0 && (
                     <button
                       onClick={() => deleteLocation(location.id)}
-                      className="flex-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 py-2 px-3 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-sm font-medium"
+                      className={`flex-1 py-2 px-3 rounded-lg transition-colors text-sm font-medium ${
+                        hasPricingTiers 
+                          ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900/50'
+                          : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50'
+                      }`}
                     >
-                      Delete
+                      {hasPricingTiers ? 'Force Delete' : 'Delete'}
                     </button>
+                  )}
+                  {criticalUsage > 0 && (
+                    <div className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 py-2 px-3 rounded-lg text-sm font-medium text-center">
+                      In Use
+                    </div>
                   )}
                 </div>
               </div>

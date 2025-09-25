@@ -13,11 +13,13 @@ type ThemeProviderProps = {
 type ThemeProviderState = {
   theme: Theme
   setTheme: (theme: Theme) => void
+  mounted: boolean
 }
 
 const initialState: ThemeProviderState = {
   theme: 'dark',
   setTheme: () => null,
+  mounted: false
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -28,12 +30,23 @@ export function ThemeProvider({
   storageKey = 'ui-theme',
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme)
+  const [theme, setTheme] = useState<Theme>(() => {
+    // During SSR, always return default theme to avoid hydration mismatch
+    if (typeof window === 'undefined') return defaultTheme
+    
+    // On client, try to get stored theme
+    try {
+      const storedTheme = localStorage.getItem(storageKey) as Theme
+      return storedTheme || defaultTheme
+    } catch {
+      return defaultTheme
+    }
+  })
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const storedTheme = localStorage.getItem(storageKey) as Theme
-    setTheme(storedTheme || defaultTheme)
-  }, [defaultTheme, storageKey])
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -55,8 +68,13 @@ export function ThemeProvider({
 
   const value = {
     theme,
+    mounted,
     setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
+      try {
+        localStorage.setItem(storageKey, theme)
+      } catch {
+        // localStorage might not be available
+      }
       setTheme(theme)
     },
   }

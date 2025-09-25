@@ -3,6 +3,7 @@ import { checkTimeSlotAvailability } from '@/lib/availability-checker'
 import { GoogleCalendarService, getGoogleCalendarCredentials, type GoogleCalendarEvent } from '@/lib/google-calendar'
 import { calculateTripCost } from '@/lib/pricing'
 import { processRetroactiveRefunds, sendRefundNotifications } from '@/lib/retroactive-refunds'
+import { blockTimeSlot, checkTimeSlotAvailability as simpleCheckAvailability } from '@/lib/simple-calendar-blocker'
 
 export interface BookingAvailabilityCheck {
   available: boolean
@@ -29,8 +30,16 @@ export async function checkBookingAvailability(
       }
     }
 
-    // Check availability against Google Calendar
-    const available = await checkTimeSlotAvailability(tripStartTime, tripEndTime)
+    // Check availability against Google Calendar or simple blocking system
+    let available: boolean
+    try {
+      // Try Google Calendar first
+      available = await checkTimeSlotAvailability(tripStartTime, tripEndTime)
+    } catch (error) {
+      console.log('[AVAILABILITY] Google Calendar check failed, using simple blocking system')
+      // Fallback to simple calendar blocking system
+      available = await simpleCheckAvailability(tripStartTime, tripEndTime)
+    }
     
     return {
       available,
@@ -55,6 +64,8 @@ export async function createBookingWithCalendarSync(
     passengerCount: number
     creditsCost: number
     riderId?: string
+    guestName?: string
+    guestPhone?: string
   }
 ): Promise<{ success: boolean; bookingId?: string; error?: string; warning?: string }> {
   try {
@@ -218,10 +229,11 @@ export async function createBookingWithCalendarSync(
               
               // Create consolidated passenger list
               const passengers = trip.bookings.map(booking => ({
-                name: booking.rider?.name || booking.user.name || 'Customer',
-                phone: booking.rider?.phone,
+                name: booking.guestName || booking.rider?.name || booking.user.name || 'Customer',
+                phone: booking.guestPhone || booking.rider?.phone,
                 email: booking.user.email,
-                pickupLocation: booking.pickupLocation?.address || booking.pickupSavedAddress?.address || 'Unknown'
+                pickupLocation: booking.pickupLocation?.address || booking.pickupSavedAddress?.address || 'Unknown',
+                isGuest: !!booking.guestName
               }))
 
               const googleEvent: GoogleCalendarEvent = {
@@ -282,6 +294,21 @@ export async function createBookingWithCalendarSync(
             }
           } else {
             console.log('[CALENDAR SYNC] ❌ Google Calendar credentials not available')
+            
+            // Fallback: Use simple calendar blocking system
+            console.log('[CALENDAR SYNC] Using simple calendar blocking as fallback...')
+            const blockSuccess = await blockTimeSlot({
+              startTime: trip.startTime,
+              endTime: trip.endTime,
+              reason: `Shuttle trip to ${trip.destination.name}`,
+              tripId: bookingData.tripId
+            })
+            
+            if (blockSuccess) {
+              console.log('[CALENDAR SYNC] ✅ Simple calendar block created successfully')
+            } else {
+              console.log('[CALENDAR SYNC] ❌ Failed to create simple calendar block')
+            }
           }
         }
       } else {
@@ -412,10 +439,11 @@ export async function updateBookingWithCalendarSync(
               await googleCalendarService.authenticate(googleCredentials)
               
               const passengers = trip.bookings.map(booking => ({
-                name: booking.rider?.name || booking.user.name || 'Customer',
-                phone: booking.rider?.phone,
+                name: booking.guestName || booking.rider?.name || booking.user.name || 'Customer',
+                phone: booking.guestPhone || booking.rider?.phone,
                 email: booking.user.email,
-                pickupLocation: booking.pickupLocation?.address || booking.pickupSavedAddress?.address || 'Unknown'
+                pickupLocation: booking.pickupLocation?.address || booking.pickupSavedAddress?.address || 'Unknown',
+                isGuest: !!booking.guestName
               }))
 
               const googleEvent: GoogleCalendarEvent = {

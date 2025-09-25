@@ -111,6 +111,8 @@ export async function DELETE(
     }
 
     const { id } = params
+    const { searchParams } = new URL(request.url)
+    const force = searchParams.get('force') === 'true'
 
     const location = await prisma.location.findUnique({
       where: { id },
@@ -119,7 +121,8 @@ export async function DELETE(
           select: {
             trips: true,
             pickupBookings: true,
-            dropoffBookings: true
+            dropoffBookings: true,
+            pricingTiers: true
           }
         }
       }
@@ -133,12 +136,43 @@ export async function DELETE(
     }
 
     // Check if location is being used
-    const totalUsage = location._count.trips + location._count.pickupBookings + location._count.dropoffBookings
-    if (totalUsage > 0) {
+    const totalUsage = location._count.trips + location._count.pickupBookings + location._count.dropoffBookings + location._count.pricingTiers
+    if (totalUsage > 0 && !force) {
+      const usageDetails = [];
+      if (location._count.trips > 0) usageDetails.push(`${location._count.trips} trip(s)`);
+      if (location._count.pickupBookings > 0) usageDetails.push(`${location._count.pickupBookings} pickup booking(s)`);
+      if (location._count.dropoffBookings > 0) usageDetails.push(`${location._count.dropoffBookings} dropoff booking(s)`);
+      if (location._count.pricingTiers > 0) usageDetails.push(`${location._count.pricingTiers} pricing tier(s)`);
+      
       return NextResponse.json(
-        { error: 'Cannot delete location that is being used in trips or bookings' },
+        { 
+          error: `Cannot delete location that is being used in ${usageDetails.join(', ')}`,
+          canForceDelete: location._count.trips === 0 && location._count.pickupBookings === 0 && location._count.dropoffBookings === 0,
+          usageCount: {
+            trips: location._count.trips,
+            pickupBookings: location._count.pickupBookings,
+            dropoffBookings: location._count.dropoffBookings,
+            pricingTiers: location._count.pricingTiers
+          }
+        },
         { status: 400 }
       )
+    }
+
+    // If force delete and only pricing tiers are blocking, delete them first
+    if (force && location._count.pricingTiers > 0) {
+      // Only allow force delete if no active bookings or trips
+      if (location._count.trips > 0 || location._count.pickupBookings > 0 || location._count.dropoffBookings > 0) {
+        return NextResponse.json(
+          { error: 'Cannot force delete location with active trips or bookings. Only pricing tiers can be force deleted.' },
+          { status: 400 }
+        )
+      }
+      
+      // Delete pricing tiers first
+      await prisma.pricingTier.deleteMany({
+        where: { locationId: id }
+      })
     }
 
     await prisma.location.delete({

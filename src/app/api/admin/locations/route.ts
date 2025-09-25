@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
           select: {
             trips: true,
             pickupBookings: true,
-            dropoffBookings: true
+            dropoffBookings: true,
+            pricingTiers: true
           }
         }
       },
@@ -90,7 +91,8 @@ export async function POST(request: NextRequest) {
           select: {
             trips: true,
             pickupBookings: true,
-            dropoffBookings: true
+            dropoffBookings: true,
+            pricingTiers: true
           }
         }
       }

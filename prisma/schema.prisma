@@ -24,6 +24,7 @@ model User {
   bookings                Booking[]
   creditBalance           CreditBalance?
   creditTransactions      CreditTransaction[]
+  paymentTransactions     PaymentTransaction[]
   riders                  Rider[]
   notifications           Notification[]
   notificationPreferences NotificationPreferences?
@@ -143,6 +144,9 @@ model Booking {
   originalCost      Int?          // Original cost when first booked (for refund tracking)
   status            BookingStatus @default(CONFIRMED)
   notes             String?
+  // Guest rider fields
+  guestName         String?       // Name of guest rider (when riderId is null and this is a guest)
+  guestPhone        String?       // Phone of guest rider
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   dropoffLocation   Location      @relation("DropoffLocation", fields: [dropoffLocationId], references: [id])
@@ -186,6 +190,8 @@ model CreditPackage {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  paymentTransactions PaymentTransaction[]
 
   @@map("credit_packages")
 }
@@ -247,6 +253,13 @@ enum NotificationPriority {
   MEDIUM
   HIGH
   URGENT
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
 }
 
 model Notification {
@@ -384,4 +397,36 @@ model AuditLog {
   @@index([userId, createdAt])
   @@index([resource, action])
   @@index([createdAt])
+}
+
+model PaymentTransaction {
+  id               String           @id @default(cuid())
+  userId           String
+  packageId        String?          // Optional: links to credit package
+  amount           Float            // Payment amount in Rands
+  credits          Int              // Credits to be added
+  payfastId        String?          // PayFast transaction reference
+  payfastPaymentId String?          // PayFast payment_id from ITN
+  status           PaymentStatus    @default(PENDING)
+  
+  // PayFast specific fields
+  merchantTxnId    String?          // Our internal transaction ID sent to PayFast
+  signature        String?          // PayFast signature for verification
+  
+  // ITN data
+  itnData          Json?            // Store complete ITN payload for debugging
+  
+  // Timestamps
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  completedAt      DateTime?        // When payment was completed
+  
+  // Relations
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package          CreditPackage?   @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  
+  @@index([userId, status])
+  @@index([payfastId])
+  @@index([status, createdAt])
+  @@map("payment_transactions")
 }

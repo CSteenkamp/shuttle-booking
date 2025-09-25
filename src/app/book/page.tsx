@@ -33,6 +33,8 @@ interface Location {
   name: string
   address: string
   isFrequent: boolean
+  defaultDuration?: number
+  baseCost?: number
 }
 
 interface Rider {
@@ -136,6 +138,7 @@ export default function BookTrip() {
     fetchUserCredits()
     setSelectedTrip(null)
   }
+
 
   const fetchCreditPackages = async () => {
     try {
@@ -256,16 +259,40 @@ export default function BookTrip() {
     destination: string;
     customDestination?: string;
     pickupAddress: string;
-    riderId?: string;
+    riderIds: string[];
+    guestRiders: Array<{id: string; name: string; phone?: string}>;
   }) => {
     if (!selectedTimeSlot) return;
 
     try {
-      // Parse the time slot to create start and end times
+      // Parse the time slot to create start time
       const [hours, minutes] = selectedTimeSlot.time.split(':').map(Number);
       const startTime = new Date(selectedTimeSlot.date);
       startTime.setHours(hours, minutes, 0, 0);
-      const endTime = addMinutes(startTime, 20);
+
+      const requestBody: any = {
+        startTime: startTime.toISOString(),
+        maxPassengers: 4,
+      }
+
+      // Check if destination has default duration (don't send endTime if it does)
+      let hasDefaultDuration = false
+      if (tripData.destination !== 'custom') {
+        const destination = locations.find(loc => loc.id === tripData.destination)
+        hasDefaultDuration = !!destination?.defaultDuration
+      }
+
+      // Only send endTime for destinations without default duration
+      if (!hasDefaultDuration) {
+        const endTime = addMinutes(startTime, 20);
+        requestBody.endTime = endTime.toISOString()
+      }
+
+      if (tripData.destination === 'custom') {
+        requestBody.customDestination = tripData.customDestination
+      } else {
+        requestBody.destinationId = tripData.destination
+      }
 
       // Create the trip first
       const tripResponse = await fetch('/api/admin/trips', {
@@ -273,13 +300,7 @@ export default function BookTrip() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          destinationId: tripData.destination === 'custom' ? undefined : tripData.destination,
-          customDestination: tripData.customDestination,
-          startTime: startTime.toISOString(),
-          endTime: endTime.toISOString(),
-          maxPassengers: 4,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!tripResponse.ok) {
@@ -289,25 +310,63 @@ export default function BookTrip() {
 
       const newTrip = await tripResponse.json();
 
-      // Now create the booking for the user
-      const bookingResponse = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tripId: newTrip.id,
-          pickupLocation: tripData.pickupAddress,
-          dropoffLocation: tripData.destination === 'custom' ? tripData.customDestination : tripData.destination,
-          riderId: tripData.riderId || null,
-        }),
-      });
+      // Create bookings for all selected riders (family members and guests)
+      const allBookings = [];
+      
+      // Create bookings for family members and account holder
+      for (const riderId of tripData.riderIds) {
+        const bookingResponse = await fetch('/api/bookings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tripId: newTrip.id,
+            pickupLocation: tripData.pickupAddress,
+            dropoffLocation: tripData.destination === 'custom' ? tripData.customDestination : tripData.destination,
+            riderId: riderId || null,
+          }),
+        });
+        
+        if (bookingResponse.ok) {
+          const booking = await bookingResponse.json();
+          allBookings.push(booking);
+        } else {
+          const errorData = await bookingResponse.json();
+          throw new Error(`Failed to create booking for rider: ${errorData.error}`);
+        }
+      }
+      
+      // Create bookings for guest riders
+      for (const guest of tripData.guestRiders) {
+        const bookingResponse = await fetch('/api/bookings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tripId: newTrip.id,
+            pickupLocation: tripData.pickupAddress,
+            dropoffLocation: tripData.destination === 'custom' ? tripData.customDestination : tripData.destination,
+            riderId: null,
+            guestName: guest.name,
+            guestPhone: guest.phone,
+          }),
+        });
+        
+        if (bookingResponse.ok) {
+          const booking = await bookingResponse.json();
+          allBookings.push(booking);
+        } else {
+          const errorData = await bookingResponse.json();
+          throw new Error(`Failed to create booking for guest ${guest.name}: ${errorData.error}`);
+        }
+      }
 
-      if (bookingResponse.ok) {
-        const booking = await bookingResponse.json();
-        setLastBookingId(booking.id);
+      if (allBookings.length > 0) {
+        setLastBookingId(allBookings[0].id);
         setShowCalendarIntegration(true);
-        toast.success('🚐 Trip created and booked successfully!', {
+        toast.success(`🚐 Trip created with ${allBookings.length} booking${allBookings.length > 1 ? 's' : ''}!`, {
           duration: 5000,
           style: {
             background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
@@ -325,8 +384,7 @@ export default function BookTrip() {
         fetchTrips();
         fetchUserCredits();
       } else {
-        const data = await bookingResponse.json();
-        toast.error(`Booking failed: ${data.error}`, {
+        toast.error('Failed to create any bookings', {
           duration: 5000,
           style: {
             background: 'linear-gradient(135deg, #ef4444, #dc2626)',
@@ -412,7 +470,7 @@ export default function BookTrip() {
         </div>
       </nav>
 
-      <div className="max-w-5xl mx-auto p-6">
+      <div className="max-w-full mx-auto p-6">
         <div className="mb-6">
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Book Your Journey</h1>

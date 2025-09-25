@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { tripId, pickupLocation, dropoffLocation, riderId } = await request.json()
+    const { tripId, pickupLocation, dropoffLocation, riderId, guestName, guestPhone } = await request.json()
 
     if (!tripId || !pickupLocation || !dropoffLocation) {
       return NextResponse.json(
@@ -61,21 +61,38 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for duplicate booking for this rider on this trip
-    const existingBooking = await prisma.booking.findFirst({
-      where: {
-        tripId,
-        userId: session.user.id,
-        riderId: riderId || null,
-        status: 'CONFIRMED'
-      }
-    })
+    let existingBooking
+    
+    if (guestName) {
+      // For guest bookings, check against guest name
+      existingBooking = await prisma.booking.findFirst({
+        where: {
+          tripId,
+          userId: session.user.id,
+          riderId: null,
+          guestName: guestName,
+          status: 'CONFIRMED'
+        }
+      })
+    } else {
+      // For family members and account holder, check against riderId
+      existingBooking = await prisma.booking.findFirst({
+        where: {
+          tripId,
+          userId: session.user.id,
+          riderId: riderId || null,
+          guestName: null, // Ensure we're not matching guest bookings
+          status: 'CONFIRMED'
+        }
+      })
+    }
 
     if (existingBooking) {
-      const riderName = riderId ? 
+      const riderName = guestName || (riderId ? 
         (await prisma.rider.findUnique({ where: { id: riderId } }))?.name || 'Unknown rider' :
-        'You'
+        'You')
       return NextResponse.json(
-        { error: `${riderName} ${riderId ? 'is' : 'are'} already booked for this trip` },
+        { error: `${riderName} ${riderId || guestName ? 'is' : 'are'} already booked for this trip` },
         { status: 400 }
       )
     }
@@ -178,7 +195,9 @@ export async function POST(request: NextRequest) {
       dropoffLocationId,
       passengerCount,
       creditsCost: totalCost,
-      riderId: riderId || undefined
+      riderId: riderId || undefined,
+      guestName,
+      guestPhone
     })
     
     const bookingResult = await createBookingWithCalendarSync({
@@ -189,7 +208,9 @@ export async function POST(request: NextRequest) {
       dropoffLocationId,
       passengerCount,
       creditsCost: totalCost,
-      riderId: riderId || undefined
+      riderId: riderId || undefined,
+      guestName,
+      guestPhone
     })
     
     console.log('[BOOKING API] Booking result:', bookingResult)
@@ -234,10 +255,10 @@ export async function POST(request: NextRequest) {
           destinationAddress: result.trip.destination.address,
           startTime: result.trip.startTime,
           endTime: result.trip.endTime,
-          pickupAddress: result.pickupLocation.address,
+          pickupAddress: result.pickupLocation?.address || result.pickupSavedAddress?.address || 'Unknown',
           passengerCount: result.passengerCount,
-          riderName: result.rider?.name,
-          riderPhone: result.rider?.phone || undefined,
+          riderName: result.guestName || result.rider?.name,
+          riderPhone: result.guestPhone || result.rider?.phone || undefined,
         },
         bookingId: result.id,
       })

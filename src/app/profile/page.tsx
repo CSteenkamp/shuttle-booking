@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { getUserDisplayName } from '@/lib/utils'
 import WheelDatePicker from '@/components/ui/WheelDatePicker'
 import SavedAddressesManager from '@/components/user/SavedAddressesManager'
+import CreditPurchase from '@/components/user/CreditPurchase'
 
 interface Rider {
   id: string
@@ -160,6 +161,21 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Credits Section */}
+        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-gray-200/50 dark:border-gray-700/50 mb-6">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center">
+              <span className="text-white text-sm font-bold">💳</span>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Credit Management</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">View your balance and purchase additional credits</p>
+            </div>
+          </div>
+          
+          <CreditPurchase />
         </div>
 
         {/* Saved Addresses Section */}
