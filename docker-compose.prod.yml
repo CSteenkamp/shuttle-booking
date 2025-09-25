@@ -23,7 +23,7 @@ services:
 
   # Pre-built Next.js Application from GitHub Container Registry
   app:
-    image: ghcr.io/christiaansteenkamp/shuttle-booking:latest
+    image: ghcr.io/csteenkamp/shuttle-booking:latest
     restart: unless-stopped
     environment:
       - NODE_ENV=production

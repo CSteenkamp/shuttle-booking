@@ -6,7 +6,7 @@ set -e
 # Configuration
 IMAGE_NAME="shuttle-booking"
 REGISTRY="ghcr.io"
-USERNAME="christiaansteenkamp"  # Change this to your GitHub username
+USERNAME="csteenkamp"  # Your GitHub username
 REPO_NAME="shuttle-booking"
 
 # Colors for output

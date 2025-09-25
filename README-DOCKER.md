@@ -58,7 +58,7 @@ That's it! The script will:
 
 ### GitHub Container Registry (Recommended)
 ```bash
-docker pull ghcr.io/christiaansteenkamp/shuttle-booking:latest
+docker pull ghcr.io/csteenkamp/shuttle-booking:latest
 ```
 
 The image is automatically built when you push to GitHub and includes:
@@ -74,7 +74,7 @@ If you prefer manual control:
 
 ```bash
 # Pull the image
-docker pull ghcr.io/christiaansteenkamp/shuttle-booking:latest
+docker pull ghcr.io/csteenkamp/shuttle-booking:latest
 
 # Run with database
 docker-compose -f docker-compose.prod.yml up -d
@@ -155,7 +155,7 @@ docker-compose -f docker-compose.prod.yml logs -f nginx
 docker login ghcr.io -u YOUR_GITHUB_USERNAME -p YOUR_TOKEN
 
 # Manually pull
-docker pull ghcr.io/christiaansteenkamp/shuttle-booking:latest
+docker pull ghcr.io/csteenkamp/shuttle-booking:latest
 ```
 
 ### Database Issues

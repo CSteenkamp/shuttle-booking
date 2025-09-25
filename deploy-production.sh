@@ -14,7 +14,7 @@ echo -e "${BLUE}🚀 Deploying Shuttle Booking App (Production)...${NC}"
 
 # Configuration
 COMPOSE_FILE="docker-compose.prod.yml"
-IMAGE_NAME="ghcr.io/christiaansteenkamp/shuttle-booking:latest"
+IMAGE_NAME="ghcr.io/csteenkamp/shuttle-booking:latest"
 
 # Check if .env file exists
 if [ ! -f .env ]; then
