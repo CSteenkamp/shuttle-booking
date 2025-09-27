@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs'
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
   trustHost: true,
-  debug: process.env.NODE_ENV === 'development',
+  debug: true, // Enable debug for both dev and production to diagnose issues
   basePath: '/api/auth',
   providers: [
     CredentialsProvider({
@@ -63,7 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: false // Set to false for development
+        secure: process.env.NODE_ENV === 'production' // Dynamic based on environment
       }
     }
   },
