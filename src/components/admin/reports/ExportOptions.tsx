@@ -67,7 +67,7 @@ export default function ExportOptions({ reportData, dateRange }: ExportOptionsPr
       <!DOCTYPE html>
       <html>
         <head>
-          <title>ShuttlePro Analytics Report</title>
+          <title>Tjoef-Tjaf Analytics Report</title>
           <style>
             body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
             .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
@@ -85,7 +85,7 @@ export default function ExportOptions({ reportData, dateRange }: ExportOptionsPr
         </head>
         <body>
           <div class="header">
-            <h1>🚐 ShuttlePro Analytics Report</h1>
+            <h1>🚐 Tjoef-Tjaf Analytics Report</h1>
             <p><strong>Report Period:</strong> ${dateRangeString}</p>
             <p><strong>Generated:</strong> ${format(new Date(), 'MMM d, yyyy \'at\' h:mm a')}</p>
           </div>
@@ -181,7 +181,7 @@ export default function ExportOptions({ reportData, dateRange }: ExportOptionsPr
 
           <div class="section">
             <p style="text-align: center; color: #666; font-size: 12px; margin-top: 40px; border-top: 1px solid #ddd; padding-top: 20px;">
-              This report was generated automatically by ShuttlePro Analytics on ${format(new Date(), 'MMM d, yyyy \'at\' h:mm a')}
+              This report was generated automatically by Tjoef-Tjaf Analytics on ${format(new Date(), 'MMM d, yyyy \'at\' h:mm a')}
             </p>
           </div>
         </body>
@@ -199,7 +199,7 @@ export default function ExportOptions({ reportData, dateRange }: ExportOptionsPr
     setExporting(true)
     try {
       const timestamp = format(new Date(), 'yyyy-MM-dd-HHmm')
-      const baseFilename = `shuttlepro-report-${timestamp}`
+      const baseFilename = `tjoeftjaf-report-${timestamp}`
 
       switch (format) {
         case 'csv':

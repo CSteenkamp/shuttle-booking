@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { signIn, getSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 export default function SignIn() {
@@ -15,6 +16,11 @@ export default function SignIn() {
   const [resendingVerification, setResendingVerification] = useState(false)
   const [verificationMessage, setVerificationMessage] = useState('')
   const router = useRouter()
+  
+  const t = useTranslations('auth')
+  const tBranding = useTranslations('branding')
+  const tFeatures = useTranslations('features')
+  const tCommon = useTranslations('common')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,6 +34,7 @@ export default function SignIn() {
         email,
         password,
         redirect: false,
+        callbackUrl: window.location.origin + '/en',
       })
 
       console.log('SignIn result:', result)
@@ -37,16 +44,19 @@ export default function SignIn() {
         
         // Handle specific error types
         if (result.error === 'EmailNotVerified') {
-          setError('Email not verified yet. Please check your inbox for a verification link.')
+          setError(t('emailNotVerified'))
           setShowResendVerification(true)
         } else if (result.error === 'CredentialsSignin') {
-          setError('Invalid email or password. Please check your credentials and try again.')
+          setError(t('invalidCredentials'))
+        } else if (result.error === 'Configuration') {
+          setError(t('authenticationFailed'))
         } else {
-          setError(`Authentication failed: ${result.error}`)
+          setError(`${t('authenticationFailed')}: ${result.error}`)
         }
         
         // Check if error is about email verification (legacy support)
-        if (result.error.includes('verify your email')) {
+        if (result.error.includes('verify your email') || result.error.includes('EmailNotVerified') || result.error.includes('email not verified')) {
+          setError(t('emailNotVerified'))
           setShowResendVerification(true)
         }
       } else if (result?.ok) {
@@ -60,11 +70,11 @@ export default function SignIn() {
           router.push('/')
         }
       } else {
-        setError('Authentication failed: Unknown error')
+        setError(t('authenticationFailed'))
       }
     } catch (error) {
       console.error('Signin error:', error)
-      setError('An error occurred during sign in')
+      setError(t('authenticationFailed'))
     } finally {
       setLoading(false)
     }
@@ -86,13 +96,13 @@ export default function SignIn() {
       const data = await response.json()
 
       if (response.ok) {
-        setVerificationMessage('Verification email sent! Please check your inbox.')
+        setVerificationMessage(t('resetLinkSent'))
         setShowResendVerification(false)
       } else {
-        setVerificationMessage(data.error || 'Failed to send verification email')
+        setVerificationMessage(data.error || t('authenticationFailed'))
       }
     } catch (error) {
-      setVerificationMessage('An error occurred while sending verification email')
+      setVerificationMessage(t('authenticationFailed'))
     } finally {
       setResendingVerification(false)
     }
@@ -116,20 +126,16 @@ export default function SignIn() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  ShuttlePro
+                  {tBranding('name')}
                 </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Premium Shuttle Service</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{tBranding('tagline')}</p>
               </div>
             </div>
 
             {/* Welcome Message */}
             <div className="space-y-4">
               <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white leading-tight">
-                Welcome
-                <br />
-                <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  Back
-                </span>
+                {t('welcomeBack')}
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
                 Ready for your next adventure? Sign in to book premium shuttle services and manage your rides with ease.
@@ -141,19 +147,19 @@ export default function SignIn() {
                   <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
                     <span className="text-emerald-600 dark:text-emerald-400 text-sm">🚀</span>
                   </div>
-                  <span className="text-gray-700 dark:text-gray-300">Quick & Easy Booking</span>
+                  <span className="text-gray-700 dark:text-gray-300">{tFeatures('quickEasyBooking')}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
                     <span className="text-blue-600 dark:text-blue-400 text-sm">👨‍👩‍👧‍👦</span>
                   </div>
-                  <span className="text-gray-700 dark:text-gray-300">Family-Friendly Service</span>
+                  <span className="text-gray-700 dark:text-gray-300">{tFeatures('familyFriendly')}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
                     <span className="text-purple-600 dark:text-purple-400 text-sm">🛡️</span>
                   </div>
-                  <span className="text-gray-700 dark:text-gray-300">Safe & Reliable</span>
+                  <span className="text-gray-700 dark:text-gray-300">{tFeatures('safeReliable')}</span>
                 </div>
               </div>
             </div>
@@ -167,10 +173,10 @@ export default function SignIn() {
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/20 dark:border-gray-700/50 p-8">
               <div className="text-center mb-8">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  Sign In
+                  {t('signIn')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Access your ShuttlePro account
+                  {t('accessYourAccount')}
                 </p>
               </div>
 
@@ -178,7 +184,7 @@ export default function SignIn() {
                 {/* Email Field */}
                 <div>
                   <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                    Email Address
+                    {t('email')}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -193,7 +199,7 @@ export default function SignIn() {
                       autoComplete="email"
                       required
                       className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
-                      placeholder="Enter your email"
+                      placeholder={t('email')}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />
@@ -203,7 +209,7 @@ export default function SignIn() {
                 {/* Password Field */}
                 <div>
                   <label htmlFor="password" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                    Password
+                    {t('password')}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -218,7 +224,7 @@ export default function SignIn() {
                       autoComplete="current-password"
                       required
                       className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
-                      placeholder="Enter your password"
+                      placeholder={t('password')}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
@@ -242,7 +248,7 @@ export default function SignIn() {
                           disabled={resendingVerification}
                           className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {resendingVerification ? 'Sending...' : 'Resend Verification Email'}
+                          {resendingVerification ? t('sendingResetLink') : t('resendVerificationEmail')}
                         </button>
                       </div>
                     )}
@@ -270,10 +276,10 @@ export default function SignIn() {
                   {loading ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      Signing in...
+                      {t('signingIn')}
                     </div>
                   ) : (
-                    'Sign In'
+                    t('signIn')
                   )}
                 </button>
 
@@ -283,7 +289,7 @@ export default function SignIn() {
                     href="/auth/forgot-password"
                     className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 font-medium transition-colors duration-200"
                   >
-                    Forgot your password?
+                    {t('forgotYourPassword')}
                   </Link>
                 </div>
 
@@ -294,7 +300,7 @@ export default function SignIn() {
                   </div>
                   <div className="relative flex justify-center text-sm">
                     <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                      New to ShuttlePro?
+                      {t('newToTjoefTjaf')}
                     </span>
                   </div>
                 </div>
@@ -305,7 +311,7 @@ export default function SignIn() {
                     href="/auth/signup"
                     className="inline-flex items-center justify-center w-full py-3 px-6 border-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 rounded-xl font-semibold hover:bg-indigo-50 dark:hover:bg-indigo-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
                   >
-                    Create New Account
+                    {t('createAccount')}
                   </Link>
                 </div>
               </form>
@@ -314,7 +320,7 @@ export default function SignIn() {
             {/* Footer */}
             <div className="text-center mt-6">
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Secure login powered by ShuttlePro
+                Secure login powered by {tBranding('name')}
               </p>
             </div>
           </div>

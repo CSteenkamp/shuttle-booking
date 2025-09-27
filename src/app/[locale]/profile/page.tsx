@@ -95,7 +95,7 @@ export default function ProfilePage() {
                   <span className="text-white font-bold text-sm">🚐</span>
                 </div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  ShuttlePro
+                  Tjoef-Tjaf
                 </h1>
               </Link>
             </div>

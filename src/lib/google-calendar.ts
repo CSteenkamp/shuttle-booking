@@ -87,7 +87,7 @@ export class GoogleCalendarService {
         extendedProperties: {
           private: {
             bookingId: eventData.bookingId,
-            source: 'shuttlepro'
+            source: 'tjoeftjaf'
           }
         }
       }
@@ -212,7 +212,7 @@ export class GoogleCalendarService {
 
   private generateEventDescription(eventData: GoogleCalendarEvent): string {
     const lines = [
-      `ShuttlePro Driver Schedule:`,
+      `Tjoef-Tjaf Driver Schedule:`,
       ``,
       `🚐 Destination: ${eventData.destination}`,
       `📍 Pickup: ${eventData.pickupLocation}`,

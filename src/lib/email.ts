@@ -82,7 +82,7 @@ const generateBookingConfirmationHTML = (data: BookingEmailData): string => {
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>ShuttlePro Booking Confirmation</title>
+      <title>Tjoef-Tjaf Booking Confirmation</title>
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
         .container { max-width: 600px; margin: 0 auto; background-color: white; }
@@ -100,7 +100,7 @@ const generateBookingConfirmationHTML = (data: BookingEmailData): string => {
     <body>
       <div class="container">
         <div class="header">
-          <h1>🚐 ShuttlePro</h1>
+          <h1>🚐 Tjoef-Tjaf</h1>
           <h2>Booking Confirmed!</h2>
           <p>Hi ${userName}, your shuttle trip has been confirmed.</p>
         </div>
@@ -162,7 +162,7 @@ const generateBookingConfirmationHTML = (data: BookingEmailData): string => {
         </div>
         
         <div class="footer">
-          <p><strong>ShuttlePro</strong> - Premium Shuttle Service</p>
+          <p><strong>Tjoef-Tjaf</strong> - Premium Shuttle Service</p>
           <p>Questions? Reply to this email or contact our support team.</p>
           <p style="font-size: 12px; color: #94a3b8;">This is an automated email. Please do not reply to this message.</p>
         </div>
@@ -188,7 +188,7 @@ const generateReminderHTML = (data: ReminderEmailData): string => {
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>ShuttlePro Trip Reminder</title>
+      <title>Tjoef-Tjaf Trip Reminder</title>
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
         .container { max-width: 600px; margin: 0 auto; background-color: white; }
@@ -206,7 +206,7 @@ const generateReminderHTML = (data: ReminderEmailData): string => {
     <body>
       <div class="container">
         <div class="header">
-          <h1>🚐 ShuttlePro</h1>
+          <h1>🚐 Tjoef-Tjaf</h1>
           <h2>${reminderTitle}</h2>
           <p>Hi ${userName}, ${reminderText}</p>
         </div>
@@ -261,7 +261,7 @@ const generateReminderHTML = (data: ReminderEmailData): string => {
         </div>
         
         <div class="footer">
-          <p><strong>ShuttlePro</strong> - Premium Shuttle Service</p>
+          <p><strong>Tjoef-Tjaf</strong> - Premium Shuttle Service</p>
           <p>Have a great trip! Contact us if you need any assistance.</p>
         </div>
       </div>
@@ -277,11 +277,11 @@ export const sendBookingConfirmation = async (data: BookingEmailData): Promise<b
     const htmlContent = generateBookingConfirmationHTML(data);
 
     const mailOptions = {
-      from: `"ShuttlePro" <${process.env.EMAIL_USER}>`,
+      from: `"Tjoef-Tjaf" <${process.env.EMAIL_USER}>`,
       to: data.userEmail,
       subject: `🚐 Booking Confirmed - ${data.tripDetails.destination} on ${format(data.tripDetails.startTime, 'MMM d')}`,
       html: htmlContent,
-      text: `Your ShuttlePro booking has been confirmed! Booking ID: #${data.bookingId}. Trip to ${data.tripDetails.destination} on ${format(data.tripDetails.startTime, 'EEEE, MMMM d, yyyy')} at ${format(data.tripDetails.startTime, 'h:mm a')}.`,
+      text: `Your Tjoef-Tjaf booking has been confirmed! Booking ID: #${data.bookingId}. Trip to ${data.tripDetails.destination} on ${format(data.tripDetails.startTime, 'EEEE, MMMM d, yyyy')} at ${format(data.tripDetails.startTime, 'h:mm a')}.`,
     };
 
     await transporter.sendMail(mailOptions);
@@ -301,11 +301,11 @@ export const sendReminderEmail = async (data: ReminderEmailData): Promise<boolea
     const reminderTitle = data.reminderType === '24h' ? '24 Hour Reminder' : 'Trip Starting Soon!';
 
     const mailOptions = {
-      from: `"ShuttlePro" <${process.env.EMAIL_USER}>`,
+      from: `"Tjoef-Tjaf" <${process.env.EMAIL_USER}>`,
       to: data.userEmail,
       subject: `🚐 ${reminderTitle} - ${data.tripDetails.destination}`,
       html: htmlContent,
-      text: `ShuttlePro Reminder: Your trip to ${data.tripDetails.destination} is ${data.reminderType === '24h' ? 'tomorrow' : 'starting soon'}. Booking ID: #${data.bookingId}`,
+      text: `Tjoef-Tjaf Reminder: Your trip to ${data.tripDetails.destination} is ${data.reminderType === '24h' ? 'tomorrow' : 'starting soon'}. Booking ID: #${data.bookingId}`,
     };
 
     await transporter.sendMail(mailOptions);
@@ -343,7 +343,7 @@ const generateCalendarInviteHTML = (data: CalendarInviteData) => {
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Calendar Invite - ShuttlePro</title>
+      <title>Calendar Invite - Tjoef-Tjaf</title>
       <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
         .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
@@ -447,7 +447,7 @@ const generateCalendarInviteHTML = (data: CalendarInviteData) => {
         </div>
         
         <div class="footer">
-          <p><strong>ShuttlePro</strong> - Driver Schedule Management</p>
+          <p><strong>Tjoef-Tjaf</strong> - Driver Schedule Management</p>
           <p>Stay organized with automatic calendar integration for all bookings!</p>
         </div>
       </div>
@@ -472,7 +472,7 @@ export const sendEmail = async (data: {
     });
 
     await transporter.sendMail({
-      from: `"ShuttlePro" <${process.env.EMAIL_USER}>`,
+      from: `"Tjoef-Tjaf" <${process.env.EMAIL_USER}>`,
       to: data.to,
       subject: data.subject,
       html: data.html,
@@ -491,11 +491,11 @@ export const sendCalendarInvite = async (data: CalendarInviteData): Promise<bool
     const htmlContent = generateCalendarInviteHTML(data);
 
     const mailOptions = {
-      from: `"ShuttlePro Driver Schedule" <${process.env.EMAIL_USER}>`,
+      from: `"Tjoef-Tjaf Driver Schedule" <${process.env.EMAIL_USER}>`,
       to: data.userEmail,
       subject: `🚐 New Booking: ${data.event.title}`,
       html: htmlContent,
-      text: `Your ShuttlePro trip has been added to your calendar! ${data.event.title} on ${format(data.event.startTime, 'EEEE, MMMM d, yyyy')} at ${format(data.event.startTime, 'h:mm a')}. Booking ID: #${data.bookingId}`,
+      text: `Your Tjoef-Tjaf trip has been added to your calendar! ${data.event.title} on ${format(data.event.startTime, 'EEEE, MMMM d, yyyy')} at ${format(data.event.startTime, 'h:mm a')}. Booking ID: #${data.bookingId}`,
       attachments: [
         {
           filename: `shuttle-trip-${data.bookingId}.ics`,
@@ -521,7 +521,7 @@ const generateEmailVerificationHTML = (data: EmailVerificationData): string => {
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Verify Your Email - ShuttlePro</title>
+      <title>Verify Your Email - Tjoef-Tjaf</title>
     </head>
     <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
       <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1); margin-top: 40px; margin-bottom: 40px;">
@@ -531,7 +531,7 @@ const generateEmailVerificationHTML = (data: EmailVerificationData): string => {
           <div style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 80px; height: 80px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
             <span style="font-size: 40px;">📧</span>
           </div>
-          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Welcome to ShuttlePro!</h1>
+          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Welcome to Tjoef-Tjaf!</h1>
           <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">Please verify your email address</p>
         </div>
 
@@ -540,7 +540,7 @@ const generateEmailVerificationHTML = (data: EmailVerificationData): string => {
           <h2 style="color: #2d3748; margin: 0 0 20px; font-size: 24px;">Hi ${data.userName || 'there'}! 👋</h2>
           
           <p style="color: #4a5568; line-height: 1.6; margin: 0 0 25px; font-size: 16px;">
-            Thank you for registering with ShuttlePro! To complete your account setup and start booking shuttle trips, please verify your email address by clicking the button below.
+            Thank you for registering with Tjoef-Tjaf! To complete your account setup and start booking shuttle trips, please verify your email address by clicking the button below.
           </p>
 
           <div style="text-align: center; margin: 35px 0;">
@@ -562,7 +562,7 @@ const generateEmailVerificationHTML = (data: EmailVerificationData): string => {
           </div>
 
           <p style="color: #718096; font-size: 14px; line-height: 1.6; margin: 30px 0 0; text-align: center;">
-            If you didn't create an account with ShuttlePro, you can safely ignore this email.
+            If you didn't create an account with Tjoef-Tjaf, you can safely ignore this email.
           </p>
 
           <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
@@ -575,7 +575,7 @@ const generateEmailVerificationHTML = (data: EmailVerificationData): string => {
         <!-- Footer -->
         <div style="background: #f7fafc; padding: 25px 30px; text-align: center; border-top: 1px solid #e2e8f0;">
           <p style="color: #718096; margin: 0; font-size: 14px;">
-            <strong>ShuttlePro</strong> - Making Every Ride Easy & Safe
+            <strong>Tjoef-Tjaf</strong> - Making Every Ride Easy & Safe
           </p>
           <p style="color: #a0aec0; margin: 5px 0 0; font-size: 12px;">
             Questions? Contact us at tjoeftjafshuttle@gmail.com
@@ -593,11 +593,11 @@ export const sendEmailVerification = async (data: EmailVerificationData): Promis
     const htmlContent = generateEmailVerificationHTML(data);
 
     const mailOptions = {
-      from: `"ShuttlePro" <${process.env.EMAIL_USER}>`,
+      from: `"Tjoef-Tjaf" <${process.env.EMAIL_USER}>`,
       to: data.userEmail,
-      subject: '📧 Verify Your Email Address - ShuttlePro',
+      subject: '📧 Verify Your Email Address - Tjoef-Tjaf',
       html: htmlContent,
-      text: `Welcome to ShuttlePro! Please verify your email address by visiting: ${data.verificationUrl}. This link will expire in 24 hours for security.`
+      text: `Welcome to Tjoef-Tjaf! Please verify your email address by visiting: ${data.verificationUrl}. This link will expire in 24 hours for security.`
     };
 
     await transporter.sendMail(mailOptions);

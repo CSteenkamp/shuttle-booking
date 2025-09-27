@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { SessionProvider } from '@/components/providers/SessionProvider'
-import { ThemeProvider } from '@/components/providers/ThemeProvider'
-import ToastProvider from '@/components/providers/ToastProvider'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ShuttlePro - Premium Transportation",
+  title: "Tjoef-Tjaf - Premium Transportation",
   description: "Professional shuttle booking service with 20-minute time slots",
 };
 
@@ -32,7 +29,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                const theme = localStorage.getItem('shuttlepro-theme') || 'dark';
+                const theme = localStorage.getItem('tjoef-tjaf-theme') || 'dark';
                 document.documentElement.classList.add(theme);
               } catch (e) {
                 document.documentElement.classList.add('dark');
@@ -44,12 +41,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider defaultTheme="dark" storageKey="shuttlepro-theme">
-          <SessionProvider>
-            {children}
-            <ToastProvider />
-          </SessionProvider>
-        </ThemeProvider>
+        {children}
       </body>
     </html>
   );

@@ -138,7 +138,7 @@ export default function SignUp() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  ShuttlePro
+                  Tjoef-Tjaf
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Premium Shuttle Service</p>
               </div>
@@ -154,7 +154,7 @@ export default function SignUp() {
                 </span>
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-                Create your ShuttlePro account and start enjoying premium shuttle services for you and your family.
+                Create your Tjoef-Tjaf account and start enjoying premium shuttle services for you and your family.
               </p>
               
               {/* Benefits */}

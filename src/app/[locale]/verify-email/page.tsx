@@ -93,7 +93,7 @@ function VerifyEmailContent() {
             <p className="text-gray-600 mb-6">{result.message}</p>
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
               <p className="text-green-700 text-sm">
-                Welcome to ShuttlePro! Your account is now activated and you can start booking shuttle trips.
+                Welcome to Tjoef-Tjaf! Your account is now activated and you can start booking shuttle trips.
               </p>
             </div>
             <div className="space-y-3">

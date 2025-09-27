@@ -343,7 +343,7 @@ export class NotificationService {
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 28px;">🚐 ShuttlePro</h1>
+              <h1 style="color: white; margin: 0; font-size: 28px;">🚐 Tjoef-Tjaf</h1>
             </div>
             <div style="background: white; padding: 30px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
               ${content}
@@ -355,7 +355,7 @@ export class NotificationService {
                 </div>
               ` : ''}
               <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #64748b; font-size: 14px;">
-                <p>This is an automated message from ShuttlePro.</p>
+                <p>This is an automated message from Tjoef-Tjaf.</p>
                 <p>You can manage your notification preferences in your account settings.</p>
               </div>
             </div>
@@ -435,11 +435,11 @@ export class NotificationService {
       for (const user of users) {
         await sendEmail({
           to: user.email,
-          subject: `📢 ShuttlePro Announcement: ${announcement.title}`,
+          subject: `📢 Tjoef-Tjaf Announcement: ${announcement.title}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
               <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-                <h1 style="color: white; margin: 0; font-size: 28px;">🚐 ShuttlePro</h1>
+                <h1 style="color: white; margin: 0; font-size: 28px;">🚐 Tjoef-Tjaf</h1>
                 <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">System Announcement</p>
               </div>
               <div style="background: white; padding: 30px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">

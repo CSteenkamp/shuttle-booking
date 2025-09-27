@@ -57,7 +57,7 @@ export default function ForgotPassword() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  ShuttlePro
+                  Tjoef-Tjaf
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Premium Shuttle Service</p>
               </div>
@@ -177,7 +177,7 @@ export default function ForgotPassword() {
             {/* Footer */}
             <div className="text-center mt-6">
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Secure password reset powered by ShuttlePro
+                Secure password reset powered by Tjoef-Tjaf
               </p>
             </div>
           </div>

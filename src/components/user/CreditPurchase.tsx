@@ -155,40 +155,50 @@ export default function CreditPurchase() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {packages.map((pkg) => (
-              <div
-                key={pkg.id}
-                className={`relative bg-white dark:bg-gray-800 rounded-xl border-2 transition-all duration-200 hover:shadow-lg ${
-                  pkg.isPopular
-                    ? 'border-indigo-500 shadow-lg scale-105'
-                    : 'border-gray-200 dark:border-gray-600 hover:border-indigo-300'
-                }`}
-              >
-                {/* Popular Badge */}
-                {pkg.isPopular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      MOST POPULAR
-                    </div>
-                  </div>
-                )}
-
-                <div className="p-6">
-                  {/* Package Header */}
-                  <div className="text-center mb-4">
-                    <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                      {pkg.name}
-                    </h4>
-                    <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                      R{pkg.price.toFixed(0)}
-                    </div>
-                    {pkg.savings > 0 && (
-                      <div className="text-sm text-green-600 dark:text-green-400 font-medium">
-                        Save R{pkg.savings.toFixed(0)} ({pkg.savingsPercentage}%)
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {packages.map((pkg, index) => {
+              // Define colors for each package
+              const packageColors = [
+                { bg: 'from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30', border: 'border-blue-200 dark:border-blue-600', text: 'text-blue-600 dark:text-blue-400', button: 'from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700' },
+                { bg: 'from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30', border: 'border-purple-200 dark:border-purple-600', text: 'text-purple-600 dark:text-purple-400', button: 'from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700' },
+                { bg: 'from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30', border: 'border-emerald-200 dark:border-emerald-600', text: 'text-emerald-600 dark:text-emerald-400', button: 'from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700' },
+                { bg: 'from-orange-50 to-red-50 dark:from-orange-900/30 dark:to-red-900/30', border: 'border-orange-200 dark:border-orange-600', text: 'text-orange-600 dark:text-orange-400', button: 'from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700' },
+                { bg: 'from-violet-50 to-purple-50 dark:from-violet-900/30 dark:to-purple-900/30', border: 'border-violet-200 dark:border-violet-600', text: 'text-violet-600 dark:text-violet-400', button: 'from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700' }
+              ]
+              
+              const colors = packageColors[index % packageColors.length]
+              
+              return (
+                <div
+                  key={pkg.id}
+                  className={`relative bg-gradient-to-br ${colors.bg} rounded-xl border-2 ${colors.border} transition-all duration-200 hover:shadow-lg ${
+                    pkg.isPopular ? 'shadow-lg scale-105' : 'hover:scale-102'
+                  }`}
+                >
+                  {/* Popular Badge */}
+                  {pkg.isPopular && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                        MOST POPULAR
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
+
+                  <div className="p-6">
+                    {/* Package Header */}
+                    <div className="text-center mb-4">
+                      <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                        {pkg.name}
+                      </h4>
+                      <div className={`text-3xl font-bold ${colors.text}`}>
+                        R{pkg.price.toFixed(0)}
+                      </div>
+                      {pkg.savings > 0 && (
+                        <div className="text-sm text-green-600 dark:text-green-400 font-medium">
+                          Save R{pkg.savings.toFixed(0)} ({pkg.savingsPercentage}%)
+                        </div>
+                      )}
+                    </div>
 
                   {/* Package Details */}
                   <div className="space-y-3 mb-6">
@@ -214,28 +224,25 @@ export default function CreditPurchase() {
                     )}
                   </div>
 
-                  {/* Purchase Button */}
-                  <button
-                    onClick={() => handlePurchase(pkg.id, pkg.name)}
-                    disabled={purchasing === pkg.id}
-                    className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
-                      pkg.isPopular
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-md hover:shadow-lg'
-                        : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white'
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {purchasing === pkg.id ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                        <span>Processing...</span>
-                      </div>
-                    ) : (
-                      `Purchase ${pkg.name}`
-                    )}
-                  </button>
+                    {/* Purchase Button */}
+                    <button
+                      onClick={() => handlePurchase(pkg.id, pkg.name)}
+                      disabled={purchasing === pkg.id}
+                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 text-white shadow-md hover:shadow-lg bg-gradient-to-r ${colors.button} disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {purchasing === pkg.id ? (
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                          <span>Processing...</span>
+                        </div>
+                      ) : (
+                        `Purchase ${pkg.name}`
+                      )}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

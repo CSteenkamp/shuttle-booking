@@ -1,0 +1,193 @@
+{
+  "branding": {
+    "name": "Tjoef-Tjaf",
+    "tagline": "Premium Pendeldiens",
+    "description": "Betroubare en gemaklike vervoer"
+  },
+  "navigation": {
+    "home": "Tuis",
+    "bookTrip": "Bespreek Reis",
+    "profile": "Profiel",
+    "adminPanel": "Admin Paneel",
+    "signOut": "Teken Uit"
+  },
+  "auth": {
+    "signIn": "Teken In",
+    "signUp": "Registreer",
+    "signOut": "Teken Uit",
+    "createAccount": "Skep Nuwe Rekening",
+    "welcomeBack": "Welkom Terug",
+    "createNewPassword": "Skep Nuwe Wagwoord",
+    "forgotPassword": "Wagwoord Vergeet",
+    "resetPassword": "Herstel Wagwoord",
+    "email": "E-pos Adres",
+    "password": "Wagwoord",
+    "confirmPassword": "Bevestig Wagwoord",
+    "newPassword": "Nuwe Wagwoord",
+    "name": "Volledige Naam",
+    "phone": "Telefoonnommer",
+    "signingIn": "Teken in...",
+    "creatingAccount": "Skep rekening...",
+    "sendingResetLink": "Stuur...",
+    "resettingPassword": "Herstel Wagwoord...",
+    "backToSignIn": "Terug na Inteken",
+    "alreadyHaveAccount": "Het jy reeds 'n rekening?",
+    "newToTjoefTjaf": "Nuut by Tjoef-Tjaf?",
+    "forgotYourPassword": "Wagwoord vergeet?",
+    "sendResetLink": "Stuur Herstel Skakel",
+    "accessYourAccount": "Toegang tot jou Tjoef-Tjaf rekening",
+    "joinTjoefTjaf": "Sluit vandag aan by Tjoef-Tjaf",
+    "enterYourEmail": "Voer jou e-pos in om 'n herstel skakel te ontvang",
+    "enterNewPassword": "Voer jou nuwe wagwoord hieronder in",
+    "emailNotVerified": "E-pos nog nie geverifieer nie. Kyk asseblief in jou inkassie vir 'n verifikasie skakel.",
+    "invalidCredentials": "Ongeldige e-pos of wagwoord. Kontroleer asseblief jou besonderhede en probeer weer.",
+    "authenticationFailed": "Verifikasie het gefaal",
+    "passwordsDontMatch": "Wagwoorde stem nie ooreen nie",
+    "passwordTooShort": "Wagwoord moet minstens 6 karakters lank wees",
+    "emailRequired": "E-pos is verplig",
+    "passwordRequired": "Wagwoord is verplig",
+    "nameRequired": "Naam is verplig",
+    "resetLinkSent": "As 'n rekening met daardie e-pos bestaan, het ons vir jou 'n wagwoord herstel skakel gestuur.",
+    "passwordResetSuccess": "Jou wagwoord is suksesvol herstel. Jy sal binnekort na die inteken bladsy herlei word.",
+    "invalidResetLink": "Hierdie wagwoord herstel skakel is ongeldig of het verval.",
+    "requestNewResetLink": "Versoek Nuwe Herstel Skakel",
+    "resendVerificationEmail": "Herstuur Verifikasie E-pos"
+  },
+  "features": {
+    "quickEasyBooking": "Vinnige & Maklike Besprekings",
+    "familyFriendly": "Familie-Vriendelike Diens",
+    "safeReliable": "Veilig & Betroubaar"
+  },
+  "profile": {
+    "yourProfile": "Jou Profiel",
+    "manageAccount": "Bestuur jou rekening en passasier inligting",
+    "accountInformation": "Rekening Inligting",
+    "creditManagement": "Krediet Bestuur",
+    "viewBalance": "Bekyk jou balans en koop addisionele krediete",
+    "pickupLocations": "Optel Liggings",
+    "manageAddresses": "Bestuur jou gestoorde optel adresse en verstekligging",
+    "riderManagement": "Passasier Bestuur",
+    "manageFamilyMembers": "Voeg by en bestuur familielede wat jou rekening gebruik"
+  },
+  "landing": {
+    "hero": {
+      "title": "🚐 Tjoef-Tjaf",
+      "subtitle": "Maak Elke Rit Maklik & Veilig",
+      "description": "Of dit nou jou kinders is wat ná skool by aktiwiteite moet uitkom, of jy self wat 'n vinnige ry om die dorp soek – Tjoef-Tjaf maak ry maklik, veilig en sorgeloos.",
+      "ctaSignedIn": "👉 Bespreek Jou Kind se Lift Vandag!",
+      "ctaGuest": "👉 Begin Vandag!"
+    },
+    "features": {
+      "title": "Hoekom Gesinne van Tjoef-Tjaf Hou 💛",
+      "subtitle": "Gemaak vir gemoedsrus, gemak en gerief.",
+      "scheduling": {
+        "title": "⏰ Maklike Tydgleuwe",
+        "description": "Bespreek ontspanne 20-minuut tydgleuwe, Maandag tot Vrydag, 7:00–18:00. Ons pas in by jóú dag – nie andersom nie."
+      },
+      "credits": {
+        "title": "💳 Eenvoudige Kredietstelsel",
+        "description": "Laai sommer vooraf jou krediete en gebruik dit wanneer jy wil. 1 krediet = 1 rit. Geen verrassings nie – net helder en maklik."
+      },
+      "sharing": {
+        "title": "🚐 Ry Saam",
+        "description": "Tot 4 passasiers kan saam op een pendel inspring. Dis veiliger, geselliger en beter vir die planeet."
+      }
+    },
+    "howItWorks": {
+      "title": "Hoe Werk Dit ✨",
+      "step1": {
+        "title": "Kies Jou Tyd",
+        "description": "Kies 'n tydgleuf tussen 7:00–18:00 op weeksdae wat jou pas."
+      },
+      "step2": {
+        "title": "Stel Jou Plekke",
+        "description": "Kies jou ophaal- en aflaaiplek."
+      },
+      "step3": {
+        "title": "Geniet die Rit",
+        "description": "Spring in, sit terug en ontspan – ons vat jou waar jy moet wees."
+      }
+    },
+    "quickFacts": {
+      "title": "Vinnige Feite 📝",
+      "fact1": {
+        "title": "20-minuut tydgleuwe",
+        "subtitle": "buigsaam en gerieflik"
+      },
+      "fact2": {
+        "title": "Weeksdagritte",
+        "subtitle": "Maandag tot Vrydag, 7:00–18:00"
+      },
+      "fact3": {
+        "title": "1 Krediet = 1 Rit",
+        "subtitle": "eenvoudig en deursigtig"
+      },
+      "fact4": {
+        "title": "Tot 4 passasiers",
+        "subtitle": "deel met vriende of familie"
+      }
+    }
+  },
+  "navigation": {
+    "welcome": "Welkom",
+    "adminPanel": "Admin Paneel",
+    "bookTrip": "Bespreek Reis",
+    "profile": "Profiel",
+    "signOut": "Teken Uit",
+    "signIn": "Teken In",
+    "getStarted": "Begin",
+    "loading": "Laai..."
+  },
+  "common": {
+    "loading": "Laai...",
+    "error": "Fout",
+    "success": "Sukses",
+    "cancel": "Kanselleer",
+    "save": "Stoor",
+    "delete": "Verwyder",
+    "edit": "Wysig",
+    "add": "Voeg By",
+    "update": "Opdateer",
+    "confirm": "Bevestig",
+    "close": "Sluit",
+    "next": "Volgende",
+    "previous": "Vorige",
+    "submit": "Indien",
+    "search": "Soek",
+    "filter": "Filter",
+    "clear": "Maak Skoon",
+    "apply": "Pas Toe",
+    "retry": "Probeer Weer",
+    "goHome": "Gaan Tuis"
+  },
+  "credits": {
+    "packages": {
+      "starterPack": "Beginners Pak",
+      "valuePack": "Waarde Pak", 
+      "familyPack": "Familie Pak",
+      "premiumPack": "Premium Pak",
+      "ultimatePack": "Uiteindelike Pak"
+    },
+    "purchase": {
+      "title": "Koop Krediete",
+      "subtitle": "Kies 'n krediet pakket om by jou rekening te voeg",
+      "currentBalance": "Huidige Balans",
+      "availableCredits": "Beskikbare krediete vir boek van ritte",
+      "credits": "krediete",
+      "pricePerCredit": "Prys per krediet",
+      "regularPrice": "Gewone prys",
+      "save": "Bespaar",
+      "savings": "besparings",
+      "purchaseButton": "Koop",
+      "processing": "Verwerk...",
+      "mostPopular": "MEES GEWILD"
+    },
+    "payment": {
+      "securePayment": "Veilige Betaling met PayFast",
+      "paymentMethods": "Betaal met kredietkaart, EFT, of mobiele betaling",
+      "autoCredits": "Krediete word outomaties bygevoeg na betaling", 
+      "secureProcessing": "Veilige verwerking deur PayFast Suid-Afrika",
+      "emailReceipt": "E-pos kwitansie gestuur vir alle transaksies"
+    }
+  }
+}

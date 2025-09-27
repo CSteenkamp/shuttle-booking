@@ -91,17 +91,17 @@ export default function AdminSettingsPage() {
       settings: [
         {
           key: 'system_name',
-          value: settings.system_name || 'ShuttlePro',
+          value: settings.system_name || 'Tjoef-Tjaf',
           description: 'System name displayed throughout the application'
         },
         {
           key: 'company_name',
-          value: settings.company_name || 'ShuttlePro Transportation',
+          value: settings.company_name || 'Tjoef-Tjaf Transportation',
           description: 'Company name for emails and official documents'
         },
         {
           key: 'support_email',
-          value: settings.support_email || 'support@shuttlepro.com',
+          value: settings.support_email || 'support@tjoeftjaf.com',
           description: 'Email address for customer support and inquiries'
         },
         {
@@ -160,7 +160,7 @@ export default function AdminSettingsPage() {
         },
         {
           key: 'email_from_name',
-          value: settings.email_from_name || 'ShuttlePro',
+          value: settings.email_from_name || 'Tjoef-Tjaf',
           description: 'Display name for outgoing emails'
         },
         {

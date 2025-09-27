@@ -116,7 +116,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </div>
               <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                  ShuttlePro Admin
+                  Tjoef-Tjaf Admin
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Management Dashboard</p>
               </div>

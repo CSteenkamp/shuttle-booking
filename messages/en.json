@@ -1,0 +1,193 @@
+{
+  "branding": {
+    "name": "Tjoef-Tjaf",
+    "tagline": "Premium Shuttle Service",
+    "description": "Reliable and comfortable transportation"
+  },
+  "navigation": {
+    "home": "Home",
+    "bookTrip": "Book Trip",
+    "profile": "Profile",
+    "adminPanel": "Admin Panel",
+    "signOut": "Sign Out"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "createAccount": "Create New Account",
+    "welcomeBack": "Welcome Back",
+    "createNewPassword": "Create New Password",
+    "forgotPassword": "Forgot Password",
+    "resetPassword": "Reset Password",
+    "email": "Email Address",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "newPassword": "New Password",
+    "name": "Full Name",
+    "phone": "Phone Number",
+    "signingIn": "Signing in...",
+    "creatingAccount": "Creating account...",
+    "sendingResetLink": "Sending...",
+    "resettingPassword": "Resetting Password...",
+    "backToSignIn": "Back to Sign In",
+    "alreadyHaveAccount": "Already have an account?",
+    "newToTjoefTjaf": "New to Tjoef-Tjaf?",
+    "forgotYourPassword": "Forgot your password?",
+    "sendResetLink": "Send Reset Link",
+    "accessYourAccount": "Access your Tjoef-Tjaf account",
+    "joinTjoefTjaf": "Join Tjoef-Tjaf today",
+    "enterYourEmail": "Enter your email to receive a reset link",
+    "enterNewPassword": "Enter your new password below",
+    "emailNotVerified": "Email not verified yet. Please check your inbox for a verification link.",
+    "invalidCredentials": "Invalid email or password. Please check your credentials and try again.",
+    "authenticationFailed": "Authentication failed",
+    "passwordsDontMatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 6 characters long",
+    "emailRequired": "Email is required",
+    "passwordRequired": "Password is required",
+    "nameRequired": "Name is required",
+    "resetLinkSent": "If an account with that email exists, we've sent you a password reset link.",
+    "passwordResetSuccess": "Your password has been successfully reset. You will be redirected to the sign-in page shortly.",
+    "invalidResetLink": "This password reset link is invalid or has expired.",
+    "requestNewResetLink": "Request New Reset Link",
+    "resendVerificationEmail": "Resend Verification Email"
+  },
+  "features": {
+    "quickEasyBooking": "Quick & Easy Booking",
+    "familyFriendly": "Family-Friendly Service", 
+    "safeReliable": "Safe & Reliable"
+  },
+  "profile": {
+    "yourProfile": "Your Profile",
+    "manageAccount": "Manage your account and rider information",
+    "accountInformation": "Account Information",
+    "creditManagement": "Credit Management",
+    "viewBalance": "View your balance and purchase additional credits",
+    "pickupLocations": "Pickup Locations",
+    "manageAddresses": "Manage your saved pickup addresses and default location",
+    "riderManagement": "Rider Management",
+    "manageFamilyMembers": "Add and manage family members who use your account"
+  },
+  "landing": {
+    "hero": {
+      "title": "🚐 Tjoef-Tjaf",
+      "subtitle": "Making Every Ride Easy & Safe",
+      "description": "Whether it's getting your kids to after-school activities or catching a lift around town, Tjoef-Tjaf makes travel simple, safe, and stress-free.",
+      "ctaSignedIn": "👉 Book Your Child's Lift Today!",
+      "ctaGuest": "👉 Get Started Today!"
+    },
+    "features": {
+      "title": "Why Families Love Tjoef-Tjaf 💛",
+      "subtitle": "Designed for peace of mind, comfort, and convenience.",
+      "scheduling": {
+        "title": "⏰ Easy Scheduling",
+        "description": "Book relaxed 20-minute time slots from Monday to Friday, 7AM–6PM. We fit into your day, not the other way around."
+      },
+      "credits": {
+        "title": "💳 Simple Credit System",
+        "description": "Load credits once and use them whenever you need a ride. 1 credit = 1 trip. No surprises, just clear and easy."
+      },
+      "sharing": {
+        "title": "🚐 Share the Ride",
+        "description": "Travel together! Up to 4 passengers can hop on the same shuttle. Safer, friendlier, and better for the planet."
+      }
+    },
+    "howItWorks": {
+      "title": "How It Works ✨",
+      "step1": {
+        "title": "Pick Your Time",
+        "description": "Choose from 7AM–6PM weekday slots that work for you."
+      },
+      "step2": {
+        "title": "Set Locations",
+        "description": "Choose your pickup & drop-off spots."
+      },
+      "step3": {
+        "title": "Enjoy the Ride",
+        "description": "Hop in & relax while we take care of the rest."
+      }
+    },
+    "quickFacts": {
+      "title": "Quick Facts 📝",
+      "fact1": {
+        "title": "20-minute time slots",
+        "subtitle": "flexible and convenient"
+      },
+      "fact2": {
+        "title": "Weekday rides",
+        "subtitle": "Monday to Friday, 7AM–6PM"
+      },
+      "fact3": {
+        "title": "1 Credit = 1 Trip",
+        "subtitle": "simple and transparent"
+      },
+      "fact4": {
+        "title": "Up to 4 passengers",
+        "subtitle": "share with friends or family"
+      }
+    }
+  },
+  "navigation": {
+    "welcome": "Welcome",
+    "adminPanel": "Admin Panel",
+    "bookTrip": "Book Trip",
+    "profile": "Profile",
+    "signOut": "Sign Out",
+    "signIn": "Sign In",
+    "getStarted": "Get Started",
+    "loading": "Loading..."
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "update": "Update",
+    "confirm": "Confirm",
+    "close": "Close",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "clear": "Clear",
+    "apply": "Apply",
+    "retry": "Try Again",
+    "goHome": "Go Home"
+  },
+  "credits": {
+    "packages": {
+      "starterPack": "Starter Pack",
+      "valuePack": "Value Pack", 
+      "familyPack": "Family Pack",
+      "premiumPack": "Premium Pack",
+      "ultimatePack": "Ultimate Pack"
+    },
+    "purchase": {
+      "title": "Purchase Credits",
+      "subtitle": "Choose a credit package to add to your account",
+      "currentBalance": "Current Balance",
+      "availableCredits": "Available credits for booking trips",
+      "credits": "credits",
+      "pricePerCredit": "Price per credit",
+      "regularPrice": "Regular price",
+      "save": "Save",
+      "savings": "savings",
+      "purchaseButton": "Purchase",
+      "processing": "Processing...",
+      "mostPopular": "MOST POPULAR"
+    },
+    "payment": {
+      "securePayment": "Secure Payment with PayFast",
+      "paymentMethods": "Pay with credit card, EFT, or mobile payment",
+      "autoCredits": "Credits added automatically after payment", 
+      "secureProcessing": "Secure processing by PayFast South Africa",
+      "emailReceipt": "Email receipt sent for all transactions"
+    }
+  }
+}

@@ -48,7 +48,7 @@ export function generateCalendarEvent(booking: BookingDetails): CalendarEvent {
 
   return {
     title: `DRIVE: ${booking.trip.destination.name}${riderInfo}`,
-    description: `ShuttlePro Driver Schedule:
+    description: `Tjoef-Tjaf Driver Schedule:
     
 🚐 Destination: ${booking.trip.destination.name}
 📍 Pickup: ${booking.pickupLocation.address}
@@ -79,11 +79,11 @@ export function generateICSFile(event: CalendarEvent): string {
   }
 
   const now = new Date()
-  const uid = `shuttle-${Date.now()}@shuttlepro.com`
+  const uid = `shuttle-${Date.now()}@tjoeftjaf.com`
 
   return `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//ShuttlePro//Shuttle Booking//EN
+PRODID:-//Tjoef-Tjaf//Shuttle Booking//EN
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
 BEGIN:VEVENT
