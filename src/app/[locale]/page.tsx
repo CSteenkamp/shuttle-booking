@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { LanguageSelector } from '@/components/ui/LanguageSelector'
 import { getUserDisplayName } from '@/lib/utils'
+import VerificationReminder from '@/components/ui/VerificationReminder'
 
 export default function Home() {
   const { data: session, status } = useSession()
@@ -98,6 +99,9 @@ export default function Home() {
           </div>
         </div>
       </nav>
+
+      {/* Email Verification Reminder */}
+      <VerificationReminder />
 
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8">

@@ -463,7 +463,7 @@ export const sendEmail = async (data: {
   html: string
 }): Promise<boolean> => {
   try {
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       service: 'Gmail',
       auth: {
         user: process.env.EMAIL_USER,

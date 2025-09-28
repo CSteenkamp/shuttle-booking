@@ -39,16 +39,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null
         }
 
-        // Check if email is verified
-        if (!user.emailVerified) {
-          throw new Error('EmailNotVerified')
-        }
+        // Allow login regardless of email verification status
+        // We'll handle verification reminders in the UI
 
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
+          emailVerified: user.emailVerified,
+          createdAt: user.createdAt.toISOString(),
         }
       }
     })
@@ -72,6 +72,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.role = user.role
         token.name = user.name
+        token.emailVerified = user.emailVerified
+        token.createdAt = user.createdAt
       }
       return token
     },
@@ -80,6 +82,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.sub!
         session.user.role = token.role as string
         session.user.name = token.name as string
+        session.user.emailVerified = token.emailVerified as boolean
+        session.user.createdAt = token.createdAt as string
       }
       return session
     }
