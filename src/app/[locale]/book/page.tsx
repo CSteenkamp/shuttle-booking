@@ -519,8 +519,8 @@ export default function BookTrip() {
           />
         </div>
 
-        {/* Simple instructions */}
-        <div className="text-center py-8">
+        {/* Simple instructions - Hidden on Mobile */}
+        <div className="hidden md:block text-center py-8">
           <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <span className="text-white text-2xl">🚐</span>
           </div>
