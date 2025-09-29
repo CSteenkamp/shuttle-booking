@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession()
@@ -17,7 +17,7 @@ export async function PATCH(
       )
     }
 
-    const { id } = params
+    const { id } = await params
     const updates = await request.json()
 
     const location = await prisma.location.findUnique({
@@ -98,7 +98,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession()
@@ -110,7 +110,7 @@ export async function DELETE(
       )
     }
 
-    const { id } = params
+    const { id } = await params
     const { searchParams } = new URL(request.url)
     const force = searchParams.get('force') === 'true'
 

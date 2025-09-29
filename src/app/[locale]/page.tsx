@@ -215,7 +215,7 @@ export default function Home() {
         <div className="mt-24">
           <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-teal-600 rounded-3xl p-12 text-white shadow-2xl">
             <h2 className="text-3xl font-bold mb-8 text-center">{tLanding('quickFacts.title')}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="text-center">
                 <div className="text-2xl mb-2">✅</div>
                 <div className="text-lg font-semibold mb-2">{tLanding('quickFacts.fact1.title')}</div>
@@ -230,11 +230,6 @@ export default function Home() {
                 <div className="text-2xl mb-2">✅</div>
                 <div className="text-lg font-semibold mb-2">{tLanding('quickFacts.fact3.title')}</div>
                 <div className="text-indigo-100 text-sm">{tLanding('quickFacts.fact3.subtitle')}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl mb-2">✅</div>
-                <div className="text-lg font-semibold mb-2">{tLanding('quickFacts.fact4.title')}</div>
-                <div className="text-indigo-100 text-sm">{tLanding('quickFacts.fact4.subtitle')}</div>
               </div>
             </div>
           </div>

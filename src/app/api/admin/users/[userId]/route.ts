@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const session = await getServerSession()
@@ -17,7 +17,7 @@ export async function PATCH(
       )
     }
 
-    const { userId } = params
+    const { userId } = await params
     const { role } = await request.json()
 
     if (!role || !['ADMIN', 'CUSTOMER'].includes(role)) {
@@ -50,7 +50,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const session = await getServerSession()
@@ -62,7 +62,7 @@ export async function DELETE(
       )
     }
 
-    const { userId } = params
+    const { userId } = await params
 
     // Prevent self-deletion
     if (userId === session.user.id) {

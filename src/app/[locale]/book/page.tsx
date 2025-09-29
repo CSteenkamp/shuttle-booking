@@ -650,23 +650,10 @@ export default function BookTrip() {
                           {pkg.credits} Credits
                         </div>
                         <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                          R{pkg.price.toFixed(2)}
+                          R{pkg.price.toFixed(0)}
                         </div>
-                        {pkg.savings > 0 && (
-                          <div className="text-sm text-green-600 dark:text-green-400 font-medium mt-1">
-                            Save R{pkg.savings.toFixed(2)} ({pkg.savingsPercentage}% off)
-                          </div>
-                        )}
                       </div>
 
-                      <div className="text-center text-sm text-gray-600 dark:text-gray-300 mb-4">
-                        R{pkg.pricePerCredit.toFixed(2)} per credit
-                        {pkg.regularPrice > pkg.price && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 line-through">
-                            Regular: R{pkg.regularPrice.toFixed(2)}
-                          </div>
-                        )}
-                      </div>
 
                       <button
                         onClick={() => purchasePackage(pkg.id)}

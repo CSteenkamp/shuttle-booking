@@ -23,28 +23,13 @@ export async function GET(request: NextRequest) {
       ]
     })
 
-    // Get current credit value setting for comparison
-    const creditValueSetting = await prisma.settings.findUnique({
-      where: { key: 'creditValue' }
-    })
-    const creditValue = parseFloat(creditValueSetting?.value || '25')
+    // Add price per credit calculation to each package
+    const packagesWithPricing = packages.map(pkg => ({
+      ...pkg,
+      pricePerCredit: pkg.price / pkg.credits
+    }))
 
-    // Add savings calculation to each package
-    const packagesWithSavings = packages.map(pkg => {
-      const regularPrice = pkg.credits * creditValue
-      const savings = regularPrice - pkg.price
-      const savingsPercentage = savings > 0 ? Math.round((savings / regularPrice) * 100) : 0
-      
-      return {
-        ...pkg,
-        regularPrice,
-        savings: savings > 0 ? savings : 0,
-        savingsPercentage,
-        pricePerCredit: pkg.price / pkg.credits
-      }
-    })
-
-    return NextResponse.json(packagesWithSavings)
+    return NextResponse.json(packagesWithPricing)
   } catch (error) {
     console.error('Error fetching credit packages:', error)
     return NextResponse.json(

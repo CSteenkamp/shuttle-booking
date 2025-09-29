@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession()
@@ -16,6 +16,7 @@ export async function PUT(
       )
     }
 
+    const { id } = await params
     const { name, address, latitude, longitude, setAsDefault } = await request.json()
 
     if (!name || !address) {
@@ -28,7 +29,7 @@ export async function PUT(
     // Check if the address belongs to the user
     const existingAddress = await prisma.savedAddress.findFirst({
       where: {
-        id: params.id,
+        id,
         userId: session.user.id
       }
     })
@@ -45,7 +46,7 @@ export async function PUT(
       where: {
         userId: session.user.id,
         name: name,
-        id: { not: params.id }
+        id: { not: id }
       }
     })
 
@@ -58,7 +59,7 @@ export async function PUT(
 
     // Update the address
     const updatedAddress = await prisma.savedAddress.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         address,
@@ -74,7 +75,7 @@ export async function PUT(
       await prisma.savedAddress.updateMany({
         where: {
           userId: session.user.id,
-          id: { not: params.id }
+          id: { not: id }
         },
         data: {
           isDefault: false
@@ -85,7 +86,7 @@ export async function PUT(
       await prisma.user.update({
         where: { id: session.user.id },
         data: {
-          defaultPickupLocationId: params.id
+          defaultPickupLocationId: id
         }
       })
     } else if (existingAddress.isDefault) {
@@ -110,7 +111,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession()
@@ -122,10 +123,12 @@ export async function DELETE(
       )
     }
 
+    const { id } = await params
+
     // Check if the address belongs to the user
     const existingAddress = await prisma.savedAddress.findFirst({
       where: {
-        id: params.id,
+        id,
         userId: session.user.id
       }
     })
@@ -149,7 +152,7 @@ export async function DELETE(
 
     // Delete the address
     await prisma.savedAddress.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ success: true })

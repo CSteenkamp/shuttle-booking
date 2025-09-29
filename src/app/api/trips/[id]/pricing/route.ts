@@ -4,15 +4,16 @@ import { calculateTripCost } from '@/lib/pricing'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const { searchParams } = new URL(request.url)
     const passengerCount = parseInt(searchParams.get('passengerCount') || '1')
 
     // Get the trip to find its destination
     const trip = await prisma.trip.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         destination: true
       }

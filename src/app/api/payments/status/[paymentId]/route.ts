@@ -3,9 +3,9 @@ import { getServerSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     paymentId: string
-  }
+  }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const { paymentId } = params
+    const { paymentId } = await params
 
     if (!paymentId) {
       return NextResponse.json(

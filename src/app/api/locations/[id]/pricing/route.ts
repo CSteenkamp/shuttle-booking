@@ -3,10 +3,11 @@ import { getPricingDisplay } from '@/lib/pricing'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const pricing = await getPricingDisplay(params.id)
+    const { id } = await params
+    const pricing = await getPricingDisplay(id)
 
     if (!pricing) {
       return NextResponse.json(

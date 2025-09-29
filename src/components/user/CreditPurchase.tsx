@@ -9,9 +9,6 @@ interface CreditPackage {
   credits: number
   price: number
   isPopular: boolean
-  regularPrice: number
-  savings: number
-  savingsPercentage: number
   pricePerCredit: number
 }
 
@@ -193,35 +190,16 @@ export default function CreditPurchase() {
                       <div className={`text-3xl font-bold ${colors.text}`}>
                         R{pkg.price.toFixed(0)}
                       </div>
-                      {pkg.savings > 0 && (
-                        <div className="text-sm text-green-600 dark:text-green-400 font-medium">
-                          Save R{pkg.savings.toFixed(0)} ({pkg.savingsPercentage}%)
-                        </div>
-                      )}
                     </div>
 
                   {/* Package Details */}
                   <div className="space-y-3 mb-6">
-                    <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center justify-between py-2">
                       <span className="text-gray-600 dark:text-gray-400">Credits:</span>
                       <span className="font-semibold text-gray-900 dark:text-white">
                         {pkg.credits}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
-                      <span className="text-gray-600 dark:text-gray-400">Price per credit:</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        R{pkg.pricePerCredit.toFixed(2)}
-                      </span>
-                    </div>
-                    {pkg.savings > 0 && (
-                      <div className="flex items-center justify-between py-2">
-                        <span className="text-gray-600 dark:text-gray-400">Regular price:</span>
-                        <span className="line-through text-gray-500 dark:text-gray-500">
-                          R{pkg.regularPrice.toFixed(0)}
-                        </span>
-                      </div>
-                    )}
                   </div>
 
                     {/* Purchase Button */}

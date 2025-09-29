@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const session = await getServerSession()
@@ -17,7 +17,7 @@ export async function POST(
       )
     }
 
-    const { userId } = params
+    const { userId } = await params
 
     // Check if user exists and is suspended
     const user = await prisma.user.findUnique({

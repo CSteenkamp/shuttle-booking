@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { tripId: string } }
+  { params }: { params: Promise<{ tripId: string }> }
 ) {
   try {
     const session = await getServerSession()
@@ -17,7 +17,7 @@ export async function DELETE(
       )
     }
 
-    const { tripId } = params
+    const { tripId } = await params
 
     // First get the trip to check if it exists and get bookings
     const trip = await prisma.trip.findUnique({

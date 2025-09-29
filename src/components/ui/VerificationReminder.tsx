@@ -11,6 +11,35 @@ export default function VerificationReminder() {
   const [isDismissed, setIsDismissed] = useState(false)
   const t = useTranslations('auth')
 
+  const handleResendVerification = async () => {
+    setIsResending(true)
+    
+    try {
+      const response = await fetch('/api/auth/send-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: session?.user.email }),
+      })
+
+      if (response.ok) {
+        toast.success('Verification email sent! Check your inbox.')
+      } else {
+        toast.error('Failed to send verification email. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error resending verification:', error)
+      toast.error('Failed to send verification email. Please try again.')
+    } finally {
+      setIsResending(false)
+    }
+  }
+
+  const handleDismiss = () => {
+    setIsDismissed(true)
+  }
+
   // Don't show if user is verified, not logged in, or dismissed
   if (!session || session.user.emailVerified || isDismissed) {
     return null
@@ -52,34 +81,6 @@ export default function VerificationReminder() {
     )
   }
 
-  const handleResendVerification = async () => {
-    setIsResending(true)
-    
-    try {
-      const response = await fetch('/api/auth/send-verification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: session.user.email }),
-      })
-
-      if (response.ok) {
-        toast.success('Verification email sent! Check your inbox.')
-      } else {
-        toast.error('Failed to send verification email. Please try again.')
-      }
-    } catch (error) {
-      console.error('Error resending verification:', error)
-      toast.error('Failed to send verification email. Please try again.')
-    } finally {
-      setIsResending(false)
-    }
-  }
-
-  const handleDismiss = () => {
-    setIsDismissed(true)
-  }
 
   return (
     <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-600 rounded-lg p-4 m-4">
