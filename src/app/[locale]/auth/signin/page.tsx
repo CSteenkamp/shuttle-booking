@@ -62,16 +62,21 @@ export default function SignIn() {
       } else if (result?.ok) {
         console.log('SignIn successful, refreshing session...')
         
-        // Force multiple session refreshes to ensure proper sync
-        await getSession()
-        await new Promise(resolve => setTimeout(resolve, 200))
-        await getSession()
+        // Use router refresh and session update
+        const session = await getSession()
+        console.log('Session after login:', session)
         
-        // Determine redirect URL
-        const redirectUrl = window.location.pathname.includes('/admin') ? '/admin' : '/'
+        // Force a full page reload to ensure session is properly synced across all components
+        if (session?.user.role === 'ADMIN') {
+          window.location.href = '/admin'
+        } else {
+          window.location.href = '/'
+        }
         
-        // Force hard navigation with additional session refresh
-        window.location.replace(redirectUrl)
+        // Trigger a page refresh after navigation
+        setTimeout(() => {
+          window.location.reload()
+        }, 500)
       } else {
         setError(t('authenticationFailed'))
       }
