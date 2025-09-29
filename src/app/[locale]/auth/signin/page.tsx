@@ -60,20 +60,18 @@ export default function SignIn() {
           setShowResendVerification(true)
         }
       } else if (result?.ok) {
-        console.log('SignIn successful, getting session...')
+        console.log('SignIn successful, refreshing session...')
         
-        // Force a session refresh and page reload for better session synchronization
+        // Force multiple session refreshes to ensure proper sync
+        await getSession()
+        await new Promise(resolve => setTimeout(resolve, 200))
         await getSession()
         
-        // Small delay to ensure session is fully propagated
-        setTimeout(() => {
-          // Force a full page refresh to ensure session state is properly synced
-          if (window.location.pathname.includes('/admin')) {
-            window.location.href = '/admin'
-          } else {
-            window.location.href = '/'
-          }
-        }, 100)
+        // Determine redirect URL
+        const redirectUrl = window.location.pathname.includes('/admin') ? '/admin' : '/'
+        
+        // Force hard navigation with additional session refresh
+        window.location.replace(redirectUrl)
       } else {
         setError(t('authenticationFailed'))
       }
