@@ -51,6 +51,12 @@ export default function WeeklyCalendar({
   const [personalEvents, setPersonalEvents] = useState<Record<string, PersonalEvent[]>>({});
   const [blockedSlots, setBlockedSlots] = useState<Record<string, string[]>>({});
   const [tripPricing, setTripPricing] = useState<Record<string, TripPricing>>({});
+  const [selectedMobileDay, setSelectedMobileDay] = useState<Date>(selectedWeekStart);
+
+  // Update selected mobile day when week changes
+  useEffect(() => {
+    setSelectedMobileDay(selectedWeekStart);
+  }, [selectedWeekStart]);
 
   // Fetch personal events for the current week
   useEffect(() => {
@@ -189,39 +195,39 @@ export default function WeeklyCalendar({
   return (
     <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white">
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-4 md:p-6 text-white">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold">📅</span>
+          <div className="flex items-center space-x-2 md:space-x-3">
+            <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <span className="text-white font-bold text-lg md:text-xl">📅</span>
             </div>
-            <h2 className="text-2xl font-bold">Select Your Trip</h2>
+            <h2 className="text-lg md:text-2xl font-bold">Select Your Trip</h2>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 md:space-x-2">
             <button
               onClick={() => navigateWeek('prev')}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors duration-200"
+              className="p-1.5 md:p-2 hover:bg-white/20 rounded-lg transition-colors duration-200"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <span className="text-lg font-semibold px-4">
+            <span className="text-sm md:text-lg font-semibold px-2 md:px-4">
               {format(selectedWeekStart, 'MMM d')} - {format(addDays(selectedWeekStart, 6), 'MMM d, yyyy')}
             </span>
             <button
               onClick={() => navigateWeek('next')}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors duration-200"
+              className="p-1.5 md:p-2 hover:bg-white/20 rounded-lg transition-colors duration-200"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
           </div>
         </div>
 
-        {/* Week Days Header */}
-        <div className="grid gap-4 min-w-[1200px]" style={{gridTemplateColumns: '150px repeat(5, 1fr)'}}>
+        {/* Week Days Header - Desktop */}
+        <div className="hidden md:grid gap-4 min-w-[1200px]" style={{gridTemplateColumns: '150px repeat(5, 1fr)'}}>
           <div className="text-center text-base font-medium text-white/80 w-[150px]">Time</div>
           {weekDays.map((day) => (
             <div key={day.toString()} className="text-center min-w-[200px]">
@@ -234,10 +240,36 @@ export default function WeeklyCalendar({
             </div>
           ))}
         </div>
+
+        {/* Mobile Day Selector */}
+        <div className="md:hidden">
+          <div className="flex justify-center">
+            <div className="bg-white/10 rounded-lg p-1 flex space-x-1 overflow-x-auto">
+              {weekDays.map((day) => (
+                <button
+                  key={day.toString()}
+                  onClick={() => setSelectedMobileDay(day)}
+                  className={`px-3 py-2 rounded-md text-center whitespace-nowrap transition-colors duration-200 ${
+                    isSameDay(day, selectedMobileDay)
+                      ? 'bg-white text-indigo-600 font-bold'
+                      : 'text-white/80 hover:bg-white/10'
+                  }`}
+                >
+                  <div className="text-xs font-semibold">
+                    {format(day, 'EEE')}
+                  </div>
+                  <div className="text-lg font-bold">
+                    {format(day, 'd')}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="max-h-[800px] overflow-auto">
+      {/* Calendar Grid - Desktop */}
+      <div className="hidden md:block max-h-[800px] overflow-auto">
         <div className="grid gap-0 border-b border-gray-200 dark:border-gray-600 min-w-[1200px]" style={{gridTemplateColumns: '150px repeat(5, 1fr)'}}>
           {timeSlots.map((timeSlot) => (
             <div key={timeSlot} className="contents">
@@ -444,6 +476,170 @@ export default function WeeklyCalendar({
               })}
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Mobile Calendar - Single Day View */}
+      <div className="md:hidden">
+        <div className="p-4 bg-gray-50 dark:bg-gray-700/30 border-b border-gray-200 dark:border-gray-600">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
+            {format(selectedMobileDay, 'EEEE, MMMM d, yyyy')}
+          </h3>
+        </div>
+        <div className="max-h-[600px] overflow-y-auto">
+          {timeSlots.map((timeSlot) => {
+            const slotTrips = getTripsForSlot(selectedMobileDay, timeSlot);
+            const personalEventsInSlot = getPersonalEventsForSlot(selectedMobileDay, timeSlot);
+            const isBlockedByPersonalEvents = isSlotBlockedByPersonalEvents(selectedMobileDay, timeSlot);
+            const isEmpty = slotTrips.length === 0 && !isBlockedByPersonalEvents;
+            const isPastDate = startOfDay(selectedMobileDay) < startOfDay(new Date());
+            
+            return (
+              <div key={`mobile-${timeSlot}`} className="border-b border-gray-200 dark:border-gray-600">
+                <div className="flex">
+                  {/* Time Label - Mobile */}
+                  <div className="w-20 bg-gray-50 dark:bg-gray-700 p-3 flex items-center justify-center border-r border-gray-200 dark:border-gray-600">
+                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">
+                      {timeSlot}
+                    </span>
+                  </div>
+                  
+                  {/* Slot Content - Mobile */}
+                  <div className="flex-1 min-h-[80px] p-3">
+                    {isEmpty && !isPastDate && (
+                      <button
+                        onClick={() => onTimeSlotClick(selectedMobileDay, timeSlot)}
+                        className="w-full h-full min-h-[65px] rounded-lg p-3 flex items-center justify-center text-gray-400 dark:text-gray-500 border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors duration-200 active:scale-95"
+                      >
+                        <div className="text-center">
+                          <div className="text-2xl mb-1">+</div>
+                          <div className="text-sm font-medium">Add Trip</div>
+                        </div>
+                      </button>
+                    )}
+                    
+                    {/* Personal Events - Mobile */}
+                    {personalEventsInSlot.map((event) => {
+                      const eventStart = new Date(event.start);
+                      const eventStartTime = format(eventStart, 'HH:mm');
+                      const isStartingSlot = eventStartTime === timeSlot;
+
+                      return (
+                        <div
+                          key={event.id}
+                          className="w-full min-h-[65px] rounded-lg p-3 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200"
+                        >
+                          <div className="font-semibold text-sm mb-1 flex items-center">
+                            📅 <span className="ml-1 truncate">{event.summary}</span>
+                            {!isStartingSlot && (
+                              <span className="text-xs text-orange-600 dark:text-orange-400 ml-2">
+                                (ongoing)
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-orange-700 dark:text-orange-300">
+                            {isStartingSlot ? 'Personal Event' : `Started at ${eventStartTime}`}
+                          </div>
+                          <div className="text-xs font-bold text-orange-700 dark:text-orange-300 mt-1">
+                            UNAVAILABLE
+                          </div>
+                        </div>
+                      );
+                    })}
+                    
+                    {/* Trip Slots - Mobile */}
+                    {slotTrips.map((trip) => {
+                      const availableSeats = trip.maxPassengers - trip.currentPassengers;
+                      const isFull = availableSeats === 0;
+                      const tripStart = parseISO(trip.startTime);
+                      const tripStartTime = format(tripStart, 'HH:mm');
+                      const isStartingSlot = tripStartTime === timeSlot;
+
+                      return (
+                        <button
+                          key={trip.id}
+                          onClick={() => !isFull && onTripClick(trip)}
+                          disabled={isFull}
+                          className={`w-full min-h-[80px] rounded-lg p-4 transition-all duration-200 text-left active:scale-95 ${
+                            isFull 
+                              ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 cursor-not-allowed opacity-60' 
+                              : availableSeats <= 1
+                                ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 hover:bg-yellow-200 dark:hover:bg-yellow-900/50 shadow-md hover:shadow-lg'
+                                : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-900/50 shadow-md hover:shadow-lg'
+                          } ${!isStartingSlot ? 'opacity-75 border-l-4 border-indigo-400 dark:border-indigo-500' : ''}`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="font-bold text-base truncate">
+                              {trip.destination.name}
+                              {!isStartingSlot && (
+                                <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">
+                                  (ongoing)
+                                </span>
+                              )}
+                            </div>
+                            <div className={`w-4 h-4 rounded-full flex-shrink-0 ${
+                              isFull ? 'bg-red-500' : availableSeats <= 1 ? 'bg-yellow-500' : 'bg-green-500'
+                            }`} />
+                          </div>
+                          
+                          {isStartingSlot && (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium">
+                                  Passengers: {trip.currentPassengers}/{trip.maxPassengers}
+                                </span>
+                                {tripPricing[trip.id] && (
+                                  <div className="text-right">
+                                    <div className="text-sm font-bold">
+                                      {tripPricing[trip.id].costPerPerson} credits
+                                    </div>
+                                    {tripPricing[trip.id].savings && tripPricing[trip.id].savings! > 0 && (
+                                      <div className="text-xs text-emerald-600 dark:text-emerald-400">
+                                        Save {tripPricing[trip.id].savings}!
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Progress Bar - Mobile */}
+                              <div className="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-600">
+                                <div 
+                                  className={`h-2 rounded-full transition-all duration-300 ${
+                                    isFull 
+                                      ? 'bg-red-500' 
+                                      : availableSeats <= 1 
+                                        ? 'bg-yellow-500' 
+                                        : 'bg-green-500'
+                                  }`}
+                                  style={{ width: `${(trip.currentPassengers / trip.maxPassengers) * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {!isStartingSlot && (
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                              Started at {tripStartTime}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                    
+                    {/* Empty past slot indicator */}
+                    {isEmpty && isPastDate && (
+                      <div className="w-full h-full min-h-[65px] rounded-lg p-3 flex items-center justify-center text-gray-300 dark:text-gray-600 bg-gray-50 dark:bg-gray-700/50">
+                        <div className="text-center">
+                          <div className="text-sm">Past time slot</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
