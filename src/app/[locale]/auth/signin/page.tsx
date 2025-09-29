@@ -61,14 +61,19 @@ export default function SignIn() {
         }
       } else if (result?.ok) {
         console.log('SignIn successful, getting session...')
-        const session = await getSession()
-        console.log('Session:', session)
         
-        if (session?.user.role === 'ADMIN') {
-          router.push('/admin')
-        } else {
-          router.push('/')
-        }
+        // Force a session refresh and page reload for better session synchronization
+        await getSession()
+        
+        // Small delay to ensure session is fully propagated
+        setTimeout(() => {
+          // Force a full page refresh to ensure session state is properly synced
+          if (window.location.pathname.includes('/admin')) {
+            window.location.href = '/admin'
+          } else {
+            window.location.href = '/'
+          }
+        }, 100)
       } else {
         setError(t('authenticationFailed'))
       }
