@@ -442,7 +442,7 @@ export default function BookTrip() {
             </div>
             <div className="flex items-center space-x-4">
               <ThemeToggle />
-              <span className="text-gray-700 dark:text-gray-200 font-medium">
+              <span className="hidden md:inline text-gray-700 dark:text-gray-200 font-medium">
                 Welcome, {getUserDisplayName(session)}
               </span>
               {session?.user.role === 'ADMIN' && (
