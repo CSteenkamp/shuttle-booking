@@ -351,11 +351,6 @@ export default function PricingManagement() {
                 
                 <div className="text-xs text-gray-500 dark:text-gray-400 mb-4">
                   R{(pkg.price / pkg.credits).toFixed(2)} per credit
-                  {pkg.price / pkg.credits < creditValue && (
-                    <span className="text-green-600 dark:text-green-400 ml-1">
-                      (Save R{((creditValue - (pkg.price / pkg.credits)) * pkg.credits).toFixed(2)})
-                    </span>
-                  )}
                 </div>
 
                 <div className="flex space-x-2">
