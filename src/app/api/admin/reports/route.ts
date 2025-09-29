@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
         t.type === 'PURCHASE' && t.user.role === 'CUSTOMER'
       )
       
-      const revenue = dayTransactions.reduce((sum, t) => sum + (t.amount * 25), 0) // R25 per credit
+      const revenue = dayTransactions.reduce((sum, t) => sum + (t.amount * 1), 0) // R1 per credit
       
       return {
         date: format(date, 'MMM dd'),
@@ -165,7 +165,7 @@ export async function GET(request: NextRequest) {
       maxPassengers: trip.maxPassengers,
       bookings: trip._count.bookings,
       utilization: Math.round((trip._count.bookings / trip.maxPassengers) * 100),
-      revenue: trip._count.bookings * 25, // Assuming 1 credit per booking = R25
+      revenue: trip._count.bookings * 1, // Assuming 1 credit per booking = R1
       date: format(trip.startTime, 'MMM dd')
     }))
 
@@ -195,12 +195,12 @@ export async function GET(request: NextRequest) {
       totalRevenue,
       totalCreditsIssued,
       totalCreditsUsed,
-      creditValue: 25,
+      creditValue: 1,
       averageRevenuePerDay: totalRevenue / Math.max(1, dayInterval.length),
       creditFlow: {
         purchased: creditTransactions
           .filter(t => t.type === 'PURCHASE' && t.user.role === 'CUSTOMER')
-          .reduce((sum, t) => sum + (t.amount * 25), 0),
+          .reduce((sum, t) => sum + (t.amount * 1), 0),
         used: totalCreditsUsed,
         balance: totalCreditsIssued - totalCreditsUsed
       }

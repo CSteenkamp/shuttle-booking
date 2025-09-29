@@ -44,7 +44,7 @@ export default function PricingManagement() {
   const [saving, setSaving] = useState(false)
   
   // Pricing settings state
-  const [creditValue, setCreditValue] = useState(25)
+  const [creditValue, setCreditValue] = useState(1)
   const [baseTripCost, setBaseTripCost] = useState(1)
   const [creditPackages, setCreditPackages] = useState<CreditPackage[]>([])
   const [discountRules, setDiscountRules] = useState<DiscountRule[]>([])
@@ -104,7 +104,7 @@ export default function PricingManagement() {
 
       if (settingsRes.ok) {
         const settings = await settingsRes.json()
-        setCreditValue(settings.creditValue || 25)
+        setCreditValue(settings.creditValue || 1)
         setBaseTripCost(settings.baseTripCost || 1)
       }
 

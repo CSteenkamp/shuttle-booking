@@ -108,7 +108,7 @@ export default function AdminDashboard() {
     totalCreditsUsed: 0,
     totalCreditsRefunded: 0,
     totalCurrentCredits: 0,
-    creditValue: 25,
+    creditValue: 1,
     
     // Performance metrics
     avgBookingsPerUser: 0,

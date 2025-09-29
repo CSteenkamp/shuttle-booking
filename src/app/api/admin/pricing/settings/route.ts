@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }, {} as Record<string, string>)
 
     return NextResponse.json({
-      creditValue: parseFloat(settingsMap.creditValue || '25'),
+      creditValue: parseFloat(settingsMap.creditValue || '1'),
       baseTripCost: parseInt(settingsMap.baseTripCost || '1')
     })
   } catch (error) {

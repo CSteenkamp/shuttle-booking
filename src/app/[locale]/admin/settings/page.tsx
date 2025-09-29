@@ -187,7 +187,7 @@ export default function AdminSettingsPage() {
       settings: [
         {
           key: 'creditValue',
-          value: settings.creditValue || '25',
+          value: settings.creditValue || '1',
           description: 'Cost per credit in South African Rand (R)'
         },
         {

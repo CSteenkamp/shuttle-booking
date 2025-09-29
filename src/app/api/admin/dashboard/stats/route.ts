@@ -220,7 +220,7 @@ export async function GET(request: NextRequest) {
     }, 0)
 
     // Calculate revenue (assume 1 credit = R25 for now, this could be configurable)
-    const creditValue = 25 // This should come from settings in the future
+    const creditValue = 1 // This should come from settings in the future
     
     // Revenue = only customer purchases + admin adjustments for customers (compensation)
     const totalRevenue = (customerPurchases + adminAdjustmentsForCustomers) * creditValue
