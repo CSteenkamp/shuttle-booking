@@ -79,14 +79,14 @@ export default function Home() {
                 <>
                   <button
                     onClick={() => signIn()}
-                    className="text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 font-medium text-xs sm:text-sm"
+                    className="text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 font-medium text-xs sm:text-sm whitespace-nowrap"
                   >
                     <span className="hidden sm:inline">{tNav('signIn')}</span>
-                    <span className="sm:hidden">In</span>
+                    <span className="sm:hidden">Sign In</span>
                   </button>
                   <Link
                     href="/auth/signup"
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl text-xs sm:text-sm"
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
                   >
                     <span className="hidden sm:inline">{tNav('getStarted')}</span>
                     <span className="sm:hidden">Start</span>
