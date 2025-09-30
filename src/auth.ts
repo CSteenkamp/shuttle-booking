@@ -90,5 +90,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   pages: {
     signIn: '/en/auth/signin'
+  },
+  events: {
+    async signIn(message) {
+      console.log('NextAuth signIn event triggered')
+    }
   }
 })

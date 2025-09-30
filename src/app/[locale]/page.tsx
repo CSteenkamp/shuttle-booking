@@ -3,31 +3,19 @@
 import Link from 'next/link'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
-import { useEffect } from 'react'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { LanguageSelector } from '@/components/ui/LanguageSelector'
 import { getUserDisplayName } from '@/lib/utils'
 import VerificationReminder from '@/components/ui/VerificationReminder'
 
 export default function Home() {
-  const { data: session, status, update } = useSession()
+  const { data: session, status } = useSession()
   const locale = useLocale()
   const t = useTranslations('branding')
   const tLanding = useTranslations('landing')
   const tNav = useTranslations('navigation')
   const tCommon = useTranslations('common')
 
-  // Handle post-login session sync
-  useEffect(() => {
-    const justLoggedIn = localStorage.getItem('justLoggedIn')
-    if (justLoggedIn === 'true') {
-      localStorage.removeItem('justLoggedIn')
-      // Force session refresh after login redirect
-      update().then(() => {
-        console.log('Session updated after login')
-      })
-    }
-  }, [update])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-800 dark:to-indigo-900 transition-colors duration-300">

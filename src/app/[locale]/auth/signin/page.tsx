@@ -35,12 +35,16 @@ export default function SignIn() {
       const result = await signIn('credentials', {
         email,
         password,
-        redirect: false,
-        callbackUrl: window.location.origin + '/en',
+        redirect: true,
+        callbackUrl: window.location.origin,
       })
 
-      console.log('SignIn result:', result)
-
+      // If we reach here, signIn didn't redirect (there was an error)
+      // Since redirect: true, successful logins will redirect automatically
+      // We only handle errors here
+      
+      console.log('SignIn completed without redirect - checking for errors')
+      
       if (result?.error) {
         console.error('SignIn error:', result.error)
         
@@ -61,23 +65,8 @@ export default function SignIn() {
           setError(t('emailNotVerified'))
           setShowResendVerification(true)
         }
-      } else if (result?.ok) {
-        console.log('SignIn successful, implementing session sync...')
-        
-        // Set a flag in localStorage to indicate successful login
-        localStorage.setItem('justLoggedIn', 'true')
-        
-        // Get the session to ensure it's available
-        const session = await getSession()
-        console.log('Post-login session:', session)
-        
-        // Redirect immediately and let the page handle the session sync
-        if (session?.user.role === 'ADMIN') {
-          window.location.href = '/admin'
-        } else {
-          window.location.href = '/'
-        }
       } else {
+        // No error but no redirect? Something unexpected happened
         setError(t('authenticationFailed'))
       }
     } catch (error) {
