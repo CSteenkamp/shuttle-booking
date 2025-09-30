@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn, getSession } from 'next-auth/react'
+import { signIn, getSession, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
@@ -16,6 +16,7 @@ export default function SignIn() {
   const [resendingVerification, setResendingVerification] = useState(false)
   const [verificationMessage, setVerificationMessage] = useState('')
   const router = useRouter()
+  const { update } = useSession()
   
   const t = useTranslations('auth')
   const tBranding = useTranslations('branding')
@@ -60,14 +61,27 @@ export default function SignIn() {
           setShowResendVerification(true)
         }
       } else if (result?.ok) {
-        console.log('SignIn successful, redirecting...')
+        console.log('SignIn successful, updating session...')
         
-        // Simple approach - just redirect and let the session sync naturally
-        if (result.url) {
-          window.location.href = result.url
-        } else {
-          // Fallback redirect
-          window.location.href = '/'
+        try {
+          // Force session update and router refresh
+          await update()
+          await getSession()
+          
+          // Use Next.js router for client-side navigation
+          router.refresh()
+          
+          // Determine redirect based on user role
+          const session = await getSession()
+          if (session?.user.role === 'ADMIN') {
+            router.push('/admin')
+          } else {
+            router.push('/')
+          }
+        } catch (error) {
+          console.error('Session update error:', error)
+          // Fallback to window redirect if session update fails
+          window.location.href = result.url || '/'
         }
       } else {
         setError(t('authenticationFailed'))
