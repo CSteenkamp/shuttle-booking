@@ -61,28 +61,32 @@ export default function SignIn() {
           setShowResendVerification(true)
         }
       } else if (result?.ok) {
-        console.log('SignIn successful, updating session...')
+        console.log('SignIn successful, forcing session sync...')
         
-        try {
-          // Force session update and router refresh
-          await update()
-          await getSession()
-          
-          // Use Next.js router for client-side navigation
-          router.refresh()
-          
-          // Determine redirect based on user role
-          const session = await getSession()
-          if (session?.user.role === 'ADMIN') {
-            router.push('/admin')
-          } else {
-            router.push('/')
+        // Force immediate session refresh with multiple approaches
+        await getSession()
+        
+        // Trigger a session update event
+        window.dispatchEvent(new Event('nextauth.session_update'))
+        
+        // Use setTimeout to allow session to propagate, then redirect
+        setTimeout(async () => {
+          try {
+            await update()
+            const freshSession = await getSession()
+            console.log('Fresh session:', freshSession)
+            
+            // Force a hard redirect to ensure session is properly loaded
+            if (freshSession?.user.role === 'ADMIN') {
+              window.location.href = '/admin'
+            } else {
+              window.location.href = '/'
+            }
+          } catch (error) {
+            console.error('Session refresh error:', error)
+            window.location.href = result.url || '/'
           }
-        } catch (error) {
-          console.error('Session update error:', error)
-          // Fallback to window redirect if session update fails
-          window.location.href = result.url || '/'
-        }
+        }, 1000)
       } else {
         setError(t('authenticationFailed'))
       }
