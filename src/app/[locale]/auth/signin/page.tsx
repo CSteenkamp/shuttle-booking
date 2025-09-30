@@ -61,32 +61,21 @@ export default function SignIn() {
           setShowResendVerification(true)
         }
       } else if (result?.ok) {
-        console.log('SignIn successful, forcing session sync...')
+        console.log('SignIn successful, implementing session sync...')
         
-        // Force immediate session refresh with multiple approaches
-        await getSession()
+        // Set a flag in localStorage to indicate successful login
+        localStorage.setItem('justLoggedIn', 'true')
         
-        // Trigger a session update event
-        window.dispatchEvent(new Event('nextauth.session_update'))
+        // Get the session to ensure it's available
+        const session = await getSession()
+        console.log('Post-login session:', session)
         
-        // Use setTimeout to allow session to propagate, then redirect
-        setTimeout(async () => {
-          try {
-            await update()
-            const freshSession = await getSession()
-            console.log('Fresh session:', freshSession)
-            
-            // Force a hard redirect to ensure session is properly loaded
-            if (freshSession?.user.role === 'ADMIN') {
-              window.location.href = '/admin'
-            } else {
-              window.location.href = '/'
-            }
-          } catch (error) {
-            console.error('Session refresh error:', error)
-            window.location.href = result.url || '/'
-          }
-        }, 1000)
+        // Redirect immediately and let the page handle the session sync
+        if (session?.user.role === 'ADMIN') {
+          window.location.href = '/admin'
+        } else {
+          window.location.href = '/'
+        }
       } else {
         setError(t('authenticationFailed'))
       }
