@@ -474,7 +474,7 @@ export default function BookTrip() {
         <div className="mb-6">
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Book Your Journey</h1>
-            <p className="text-base text-gray-600 dark:text-gray-300">Select your trip and enjoy premium shuttle service</p>
+            <p className="text-base text-gray-600 dark:text-gray-300">Select your drop off time and enjoy premium shuttle service</p>
           </div>
           
           <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-xl shadow-lg p-4 border border-gray-200/50 dark:border-gray-700/50">
