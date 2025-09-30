@@ -60,23 +60,15 @@ export default function SignIn() {
           setShowResendVerification(true)
         }
       } else if (result?.ok) {
-        console.log('SignIn successful, refreshing session...')
+        console.log('SignIn successful, redirecting...')
         
-        // Use router refresh and session update
-        const session = await getSession()
-        console.log('Session after login:', session)
-        
-        // Force a full page reload to ensure session is properly synced across all components
-        if (session?.user.role === 'ADMIN') {
-          window.location.href = '/admin'
+        // Simple approach - just redirect and let the session sync naturally
+        if (result.url) {
+          window.location.href = result.url
         } else {
+          // Fallback redirect
           window.location.href = '/'
         }
-        
-        // Trigger a page refresh after navigation
-        setTimeout(() => {
-          window.location.reload()
-        }, 500)
       } else {
         setError(t('authenticationFailed'))
       }
