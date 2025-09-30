@@ -9,7 +9,7 @@ export function SessionProvider({
 }) {
   return (
     <NextAuthSessionProvider 
-      refetchInterval={0}
+      refetchInterval={5}
       refetchOnWindowFocus={true}
       refetchWhenOffline={false}
     >

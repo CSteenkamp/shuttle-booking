@@ -35,16 +35,11 @@ export default function SignIn() {
       const result = await signIn('credentials', {
         email,
         password,
-        redirect: true,
-        callbackUrl: window.location.origin,
+        redirect: false,
       })
 
-      // If we reach here, signIn didn't redirect (there was an error)
-      // Since redirect: true, successful logins will redirect automatically
-      // We only handle errors here
-      
-      console.log('SignIn completed without redirect - checking for errors')
-      
+      console.log('SignIn result:', result)
+
       if (result?.error) {
         console.error('SignIn error:', result.error)
         
@@ -65,8 +60,40 @@ export default function SignIn() {
           setError(t('emailNotVerified'))
           setShowResendVerification(true)
         }
+      } else if (result?.ok) {
+        console.log('SignIn successful, implementing wait-based session sync...')
+        
+        // Implement a polling mechanism to wait for session to be available
+        let sessionReady = false
+        let attempts = 0
+        const maxAttempts = 10
+        
+        while (!sessionReady && attempts < maxAttempts) {
+          attempts++
+          console.log(`Checking session availability, attempt ${attempts}`)
+          
+          const session = await getSession()
+          if (session && session.user) {
+            console.log('Session is now available:', session)
+            sessionReady = true
+            
+            // Redirect based on role
+            if (session.user.role === 'ADMIN') {
+              router.push('/admin')
+            } else {
+              router.push('/')
+            }
+          } else {
+            // Wait 500ms before trying again
+            await new Promise(resolve => setTimeout(resolve, 500))
+          }
+        }
+        
+        if (!sessionReady) {
+          console.warn('Session not available after max attempts, using fallback redirect')
+          window.location.href = '/'
+        }
       } else {
-        // No error but no redirect? Something unexpected happened
         setError(t('authenticationFailed'))
       }
     } catch (error) {
