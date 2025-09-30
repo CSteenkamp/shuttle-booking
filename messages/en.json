@@ -122,6 +122,10 @@
         "title": "Up to 4 passengers",
         "subtitle": "share with friends or family"
       }
+    },
+    "timingInfo": {
+      "title": "⏰ Important Timing Information",
+      "description": "The time slot you book is your drop-off time at the destination. Riders will be picked up within the 20 minutes prior to this time and need to be ready for pickup during this window."
     }
   },
   "navigation": {

@@ -236,6 +236,18 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Timing Information */}
+        <div className="mt-16">
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-2xl p-8 border-2 border-amber-200 dark:border-amber-700/50 shadow-lg">
+            <h2 className="text-2xl font-bold text-amber-800 dark:text-amber-200 mb-4 text-center">
+              {tLanding('timingInfo.title')}
+            </h2>
+            <p className="text-amber-700 dark:text-amber-300 text-lg leading-relaxed text-center max-w-4xl mx-auto">
+              {tLanding('timingInfo.description')}
+            </p>
+          </div>
+        </div>
+
       </div>
     </div>
   )
