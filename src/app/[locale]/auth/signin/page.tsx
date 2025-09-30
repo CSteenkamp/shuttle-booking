@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
+// Force deployment trigger
 export default function SignIn() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
