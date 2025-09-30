@@ -63,6 +63,9 @@ export default function SignIn() {
       } else if (result?.ok) {
         console.log('SignIn successful, implementing wait-based session sync...')
         
+        // Clear any previous error messages
+        setError('')
+        
         // Implement a polling mechanism to wait for session to be available
         let sessionReady = false
         let attempts = 0
