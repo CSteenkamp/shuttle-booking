@@ -66,19 +66,26 @@ export default function SignIn() {
         // Clear any previous error messages
         setError('')
         
-        // Implement a polling mechanism to wait for session to be available
+        // Enhanced polling mechanism with forced session update
         let sessionReady = false
         let attempts = 0
-        const maxAttempts = 10
+        const maxAttempts = 15 // Increased attempts
         
         while (!sessionReady && attempts < maxAttempts) {
           attempts++
           console.log(`Checking session availability, attempt ${attempts}`)
           
+          // Force session update
+          await update()
+          
+          // Check session after forced update
           const session = await getSession()
           if (session && session.user) {
             console.log('Session is now available:', session)
             sessionReady = true
+            
+            // Add small delay before redirect to ensure session is fully synced
+            await new Promise(resolve => setTimeout(resolve, 100))
             
             // Redirect based on role
             if (session.user.role === 'ADMIN') {
@@ -87,14 +94,16 @@ export default function SignIn() {
               router.push('/')
             }
           } else {
-            // Wait 500ms before trying again
-            await new Promise(resolve => setTimeout(resolve, 500))
+            // Progressive delay: start with 300ms, increase to 800ms
+            const delay = Math.min(300 + (attempts * 50), 800)
+            await new Promise(resolve => setTimeout(resolve, delay))
           }
         }
         
         if (!sessionReady) {
-          console.warn('Session not available after max attempts, using fallback redirect')
-          window.location.href = '/'
+          console.warn('Session not available after max attempts, forcing window reload')
+          // Force a complete page reload as fallback
+          window.location.reload()
         }
       } else {
         setError(t('authenticationFailed'))
