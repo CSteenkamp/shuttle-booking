@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import AddressInput from './AddressInput';
 
 interface Location {
   id: string;
@@ -65,6 +66,7 @@ export default function NewTripModal({
   const [destination, setDestination] = useState('');
   const [customDestination, setCustomDestination] = useState('');
   const [pickupAddress, setPickupAddress] = useState('');
+  const [pickupVerified, setPickupVerified] = useState(false);
   const [selectedRiders, setSelectedRiders] = useState<string[]>([]);
   const [guestRiders, setGuestRiders] = useState<GuestRider[]>([]);
   const [showGuestForm, setShowGuestForm] = useState(false);
@@ -79,6 +81,7 @@ export default function NewTripModal({
       setDestination('');
       setCustomDestination('');
       setPickupAddress('');
+      setPickupVerified(false);
       setSelectedRiders([]);
       setGuestRiders([]);
       setShowGuestForm(false);
@@ -271,21 +274,34 @@ export default function NewTripModal({
           </div>
 
 
-          {/* Pickup Address */}
+          {/* Pickup Address with Verification */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">
               Pickup Address <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              placeholder="Enter your pickup street address"
+            <AddressInput
               value={pickupAddress}
-              onChange={(e) => setPickupAddress(e.target.value)}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm text-gray-900 dark:text-white"
+              onChange={(address, verified) => {
+                setPickupAddress(address);
+                setPickupVerified(verified);
+              }}
+              placeholder="Enter your pickup street address (e.g., 123 Main Street, Ceres)"
+              required
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              e.g., &quot;123 Main Street, Stellenbosch&quot; or &quot;456 Oak Avenue, Somerset West&quot;
-            </p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Address will be automatically verified for accuracy
+              </p>
+              {pickupAddress && (
+                <span className={`text-xs font-medium px-2 py-1 rounded ${
+                  pickupVerified
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                    : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                }`}>
+                  {pickupVerified ? '✓ Verified' : '⚠ Unverified'}
+                </span>
+              )}
+            </div>
           </div>
 
 
