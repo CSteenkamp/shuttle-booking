@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import AddressInput from './AddressInput';
+import AddressAutocomplete from './AddressAutocomplete';
 
 interface Location {
   id: string;
@@ -274,34 +274,28 @@ export default function NewTripModal({
           </div>
 
 
-          {/* Pickup Address with Verification */}
+          {/* Pickup Address with Autocomplete */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">
               Pickup Address <span className="text-red-500">*</span>
             </label>
-            <AddressInput
+            <AddressAutocomplete
               value={pickupAddress}
               onChange={(address, verified) => {
                 setPickupAddress(address);
                 setPickupVerified(verified);
               }}
-              placeholder="Enter your pickup street address (e.g., 123 Main Street, Ceres)"
+              placeholder="Start typing your address... (e.g., 11 Tarentaal)"
               required
             />
-            <div className="flex items-center justify-between mt-2">
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Address will be automatically verified for accuracy
-              </p>
-              {pickupAddress && (
-                <span className={`text-xs font-medium px-2 py-1 rounded ${
-                  pickupVerified
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                    : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                }`}>
-                  {pickupVerified ? '✓ Verified' : '⚠ Unverified'}
-                </span>
-              )}
-            </div>
+            {pickupAddress && pickupVerified && (
+              <div className="mt-2 flex items-center space-x-2 text-xs text-green-600 dark:text-green-400">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="font-medium">Address verified</span>
+              </div>
+            )}
           </div>
 
 
