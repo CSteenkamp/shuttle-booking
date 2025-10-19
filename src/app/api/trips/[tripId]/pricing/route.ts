@@ -4,10 +4,10 @@ import { calculateTripCost } from '@/lib/pricing'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ tripId: string }> }
 ) {
   try {
-    const { id } = await params
+    const { tripId: id } = await params
     const { searchParams } = new URL(request.url)
     const passengerCount = parseInt(searchParams.get('passengerCount') || '1')
 

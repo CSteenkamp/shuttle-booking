@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from '@/lib/auth'
-
 import { prisma } from '@/lib/prisma'
 import { startOfDay, endOfDay } from 'date-fns'
+import { autoAssignDriver } from '@/lib/driver-assignment'
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession()
-    
+
     if (!session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -15,7 +15,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { destinationId, customDestination, startTime, endTime, maxPassengers } = await request.json()
+    const {
+      destinationId,
+      customDestination,
+      startTime,
+      endTime,
+      maxPassengers,
+      cityId,
+      areaId,
+      autoAssign = true // Option to auto-assign driver
+    } = await request.json()
 
     if ((!destinationId && !customDestination) || !startTime) {
       return NextResponse.json(
@@ -25,6 +34,8 @@ export async function POST(request: NextRequest) {
     }
 
     let finalDestinationId = destinationId;
+    let finalCityId = cityId;
+    let finalAreaId = areaId;
     let calculatedEndTime = endTime;
 
     // If custom destination, create it first
@@ -34,14 +45,20 @@ export async function POST(request: NextRequest) {
           name: 'Custom Destination',
           address: customDestination,
           isFrequent: false,
+          cityId: finalCityId || null,
+          areaId: finalAreaId || null
         }
       });
       finalDestinationId = customLoc.id;
     }
 
-    // Get destination details to check for default duration
+    // Get destination details to check for default duration and city/area
     const destination = await prisma.location.findUnique({
-      where: { id: finalDestinationId }
+      where: { id: finalDestinationId },
+      include: {
+        city: true,
+        area: true
+      }
     });
 
     if (!destination) {
@@ -51,12 +68,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Use destination's city/area if not provided
+    if (!finalCityId && destination.cityId) {
+      finalCityId = destination.cityId
+    }
+    if (!finalAreaId && destination.areaId) {
+      finalAreaId = destination.areaId
+    }
+
+    // Warn if no city/area (for backward compatibility)
+    if (!finalCityId || !finalAreaId) {
+      console.warn('[TRIP CREATION] No city/area specified - driver auto-assignment will be skipped')
+    }
+
     // Calculate endTime based on destination's defaultDuration if available
     if (destination.defaultDuration && !endTime) {
       const startDate = new Date(startTime);
-      const endDate = new Date(startDate.getTime() + destination.defaultDuration * 60000); // Convert minutes to milliseconds
+      const endDate = new Date(startDate.getTime() + destination.defaultDuration * 60000);
       calculatedEndTime = endDate.toISOString();
-      console.log(`[TRIP CREATION] Auto-calculated endTime for ${destination.name}: ${destination.defaultDuration} minutes (${startTime} -> ${calculatedEndTime})`);
+      console.log(`[TRIP CREATION] Auto-calculated endTime for ${destination.name}: ${destination.defaultDuration} minutes`);
     } else if (!calculatedEndTime) {
       return NextResponse.json(
         { error: 'End time is required for destinations without default duration' },
@@ -64,7 +94,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if ANY trip already exists for this time slot (destination is locked)
+    // Check if ANY trip already exists for this time slot
     const existingTrip = await prisma.trip.findFirst({
       where: {
         startTime: new Date(startTime),
@@ -74,6 +104,20 @@ export async function POST(request: NextRequest) {
         destination: true,
         bookings: {
           where: { status: 'CONFIRMED' }
+        },
+        assignments: {
+          where: {
+            status: {
+              in: ['ASSIGNED', 'ACCEPTED']
+            }
+          },
+          include: {
+            driver: {
+              include: {
+                user: true
+              }
+            }
+          }
         }
       }
     })
@@ -86,11 +130,12 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         )
       }
-      
+
       // If same destination, return the existing trip
       return NextResponse.json(existingTrip)
     }
 
+    // Create the trip
     const trip = await prisma.trip.create({
       data: {
         destinationId: finalDestinationId,
@@ -99,13 +144,47 @@ export async function POST(request: NextRequest) {
         maxPassengers: maxPassengers || 4,
         currentPassengers: 0,
         status: 'SCHEDULED',
+        cityId: finalCityId,
+        areaId: finalAreaId
       },
       include: {
         destination: true,
+        city: true,
+        area: true
       },
     })
 
-    return NextResponse.json(trip)
+    // Auto-assign driver if enabled and city/area are available
+    let driverAssignment = null
+    if (autoAssign && finalCityId && finalAreaId) {
+      console.log(`[TRIP CREATION] Auto-assigning driver for trip ${trip.id}`)
+
+      const assignmentResult = await autoAssignDriver({
+        tripId: trip.id,
+        cityId: finalCityId,
+        areaId: finalAreaId,
+        startTime: new Date(startTime),
+        endTime: new Date(calculatedEndTime),
+        assignedBy: session.user.id
+      })
+
+      if (assignmentResult.success) {
+        console.log(`[TRIP CREATION] Driver assigned: ${assignmentResult.driverName}`)
+        driverAssignment = {
+          driverId: assignmentResult.driverId,
+          driverName: assignmentResult.driverName,
+          vehicleInfo: assignmentResult.vehicleInfo
+        }
+      } else {
+        console.warn(`[TRIP CREATION] Driver assignment failed: ${assignmentResult.message}`)
+      }
+    }
+
+    return NextResponse.json({
+      ...trip,
+      driverAssignment
+    })
+
   } catch (error) {
     console.error('Error creating trip:', error)
     return NextResponse.json(

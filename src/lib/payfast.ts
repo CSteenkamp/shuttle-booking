@@ -279,3 +279,296 @@ export function mapPayFastStatus(payfastStatus: string): 'PENDING' | 'COMPLETED'
       return 'PENDING'
   }
 }
+
+/**
+ * Process booking payment webhook
+ */
+export async function processBookingPayment(itnData: ITNData) {
+  const { prisma } = await import('./prisma')
+
+  try {
+    const bookingId = itnData.m_payment_id
+    const status = mapPayFastStatus(itnData.payment_status)
+    const amount = parseFloat(itnData.amount_gross)
+
+    // Find or create payment record
+    let payment = await prisma.payment.findUnique({
+      where: { bookingId }
+    })
+
+    if (payment) {
+      payment = await prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          status,
+          transactionId: itnData.pf_payment_id,
+          paidAt: status === 'COMPLETED' ? new Date() : null,
+          metadata: { itnData } as any
+        }
+      })
+    } else {
+      payment = await prisma.payment.create({
+        data: {
+          bookingId,
+          amount,
+          status,
+          paymentMethod: 'PAYFAST',
+          transactionId: itnData.pf_payment_id,
+          paidAt: status === 'COMPLETED' ? new Date() : null,
+          metadata: { itnData } as any
+        }
+      })
+    }
+
+    // Update booking status
+    if (status === 'COMPLETED') {
+      const booking = await prisma.booking.update({
+        where: { id: bookingId },
+        data: {
+          status: 'CONFIRMED',
+          paymentStatus: 'PAID'
+        },
+        include: {
+          trip: {
+            include: { assignments: true }
+          }
+        }
+      })
+
+      // Create driver earnings if trip is assigned
+      const activeAssignment = booking.trip?.assignments?.find(a => a.status === 'ACCEPTED' || a.status === 'IN_PROGRESS')
+      if (activeAssignment) {
+        const platformFeePercent = 15
+        const platformFee = Math.floor(amount * (platformFeePercent / 100))
+        const netAmount = amount - platformFee
+
+        await prisma.driverEarnings.create({
+          data: {
+            driverId: activeAssignment.driverId,
+            tripId: booking.tripId,
+            bookingId: booking.id,
+            baseAmount: amount,
+            totalAmount: amount,
+            platformFee,
+            netAmount,
+            tripDate: booking.trip.startTime,
+            payoutStatus: 'PENDING'
+          }
+        })
+      }
+    } else if (status === 'FAILED' || status === 'CANCELLED') {
+      await prisma.booking.update({
+        where: { id: bookingId },
+        data: {
+          status: 'CANCELLED',
+          paymentStatus: status === 'FAILED' ? 'FAILED' : 'CANCELLED'
+        }
+      })
+    }
+
+    return { success: true, payment }
+  } catch (error) {
+    console.error('Error processing booking payment:', error)
+    return { success: false, error: 'Failed to process payment' }
+  }
+}
+
+/**
+ * Initiate booking payment
+ */
+export async function initiateBookingPayment(bookingId: string) {
+  const { prisma } = await import('./prisma')
+
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        user: true,
+        trip: {
+          include: { destination: true }
+        }
+      }
+    })
+
+    if (!booking) {
+      return { success: false, error: 'Booking not found' }
+    }
+
+    const config = getPayFastConfig()
+
+    const paymentData = preparePaymentData(config, {
+      amount: booking.creditsCost,
+      itemName: `Shuttle Booking - ${booking.trip.destination.name}`,
+      itemDescription: `Trip on ${booking.trip.startTime.toLocaleDateString()}`,
+      paymentId: bookingId,
+      userId: booking.userId
+    })
+
+    // Generate signature
+    const signature = generateSignature(
+      paymentData as unknown as Record<string, string>,
+      config.passphrase
+    )
+
+    // Get payment URL
+    const paymentUrl = getPaymentUrl(paymentData, signature, config.sandbox)
+
+    // Create pending payment record
+    await prisma.payment.create({
+      data: {
+        bookingId,
+        amount: booking.creditsCost,
+        status: 'PENDING',
+        paymentMethod: 'PAYFAST'
+      }
+    })
+
+    return { success: true, paymentUrl }
+  } catch (error) {
+    console.error('Error initiating booking payment:', error)
+    return { success: false, error: 'Failed to initiate payment' }
+  }
+}
+
+/**
+ * Process refund
+ */
+export async function processRefund(paymentId: string, amount: number, reason: string) {
+  const { prisma } = await import('./prisma')
+
+  try {
+    const payment = await prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: { booking: true }
+    })
+
+    if (!payment) {
+      return { success: false, error: 'Payment not found' }
+    }
+
+    if (payment.status !== 'COMPLETED') {
+      return { success: false, error: 'Payment not completed' }
+    }
+
+    // Create refund record
+    const refund = await prisma.refund.create({
+      data: {
+        paymentId,
+        amount,
+        reason,
+        status: 'PENDING'
+      }
+    })
+
+    // Update payment and booking
+    await prisma.payment.update({
+      where: { id: paymentId },
+      data: { status: 'CANCELLED' }  // Use CANCELLED instead of REFUNDED
+    })
+
+    await prisma.booking.update({
+      where: { id: payment.bookingId },
+      data: {
+        status: 'CANCELLED',
+        paymentStatus: 'REFUNDED'
+      }
+    })
+
+    return { success: true, refund }
+  } catch (error) {
+    console.error('Error processing refund:', error)
+    return { success: false, error: 'Failed to process refund' }
+  }
+}
+
+/**
+ * Process driver payout
+ */
+export async function processDriverPayout(
+  driverId: string,
+  period: { start: Date; end: Date }
+) {
+  const { prisma } = await import('./prisma')
+
+  try {
+    const earnings = await prisma.driverEarnings.findMany({
+      where: {
+        driverId,
+        payoutStatus: 'PENDING',
+        createdAt: {
+          gte: period.start,
+          lte: period.end
+        }
+      }
+    })
+
+    if (earnings.length === 0) {
+      return { success: false, error: 'No pending earnings' }
+    }
+
+    const totalEarningsAmount = earnings.reduce((sum, e) => sum + e.totalAmount, 0)
+    const platformFeeAmount = earnings.reduce((sum, e) => sum + e.platformFee, 0)
+    const netAmount = earnings.reduce((sum, e) => sum + e.netAmount, 0)
+
+    const payout = await prisma.driverPayout.create({
+      data: {
+        driverId,
+        amount: netAmount,
+        totalEarnings: totalEarningsAmount,
+        platformFee: platformFeeAmount,
+        netAmount: netAmount,
+        tripCount: earnings.length,
+        periodStart: period.start,
+        periodEnd: period.end,
+        status: 'PROCESSING',
+        paymentMethod: 'BANK_TRANSFER'
+      }
+    })
+
+    await prisma.driverEarnings.updateMany({
+      where: {
+        id: { in: earnings.map(e => e.id) }
+      },
+      data: {
+        payoutStatus: 'PROCESSING',
+        payoutId: payout.id
+      }
+    })
+
+    return { success: true, payout, amount: netAmount }
+  } catch (error) {
+    console.error('Error processing payout:', error)
+    return { success: false, error: 'Failed to process payout' }
+  }
+}
+
+/**
+ * Complete driver payout
+ */
+export async function completeDriverPayout(payoutId: string, reference: string) {
+  const { prisma } = await import('./prisma')
+
+  try {
+    await prisma.driverPayout.update({
+      where: { id: payoutId },
+      data: {
+        status: 'PAID',  // Use PAID instead of COMPLETED
+        paidAt: new Date(),
+        reference
+      }
+    })
+
+    await prisma.driverEarnings.updateMany({
+      where: { payoutId },
+      data: {
+        payoutStatus: 'PAID',
+        paidAt: new Date()
+      }
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error completing payout:', error)
+    return { success: false, error: 'Failed to complete payout' }
+  }
+}

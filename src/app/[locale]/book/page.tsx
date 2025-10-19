@@ -44,6 +44,18 @@ interface Rider {
   relationship: string | null
 }
 
+interface City {
+  id: string
+  name: string
+  areas: Area[]
+}
+
+interface Area {
+  id: string
+  name: string
+  driverCount?: number
+}
+
 export default function BookTrip() {
   const { data: session, status } = useSession()
   const [selectedWeekStart, setSelectedWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 })) // Monday start
@@ -60,6 +72,13 @@ export default function BookTrip() {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null)
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ date: Date; time: string } | null>(null)
 
+  // City/Area selection state
+  const [cities, setCities] = useState<City[]>([])
+  const [selectedCityId, setSelectedCityId] = useState<string>('')
+  const [selectedAreaId, setSelectedAreaId] = useState<string>('')
+  const [loadingCities, setLoadingCities] = useState(true)
+  const [showCitySelection, setShowCitySelection] = useState(true)
+
 
   useEffect(() => {
     if (status === 'loading') return
@@ -69,18 +88,47 @@ export default function BookTrip() {
   }, [session, status])
 
   useEffect(() => {
-    fetchTrips()
-    fetchLocations()
-    fetchUserCredits()
-    fetchRiders()
-    fetchCreditPackages()
-  }, [selectedWeekStart])
+    fetchCities()
+  }, [])
+
+  useEffect(() => {
+    if (selectedCityId && selectedAreaId) {
+      fetchTrips()
+      fetchLocations()
+      fetchUserCredits()
+      fetchRiders()
+      fetchCreditPackages()
+    }
+  }, [selectedWeekStart, selectedCityId, selectedAreaId])
+
+  const fetchCities = async () => {
+    try {
+      const response = await fetch('/api/cities?includeAreas=true')
+      if (response.ok) {
+        const data = await response.json()
+        setCities(data.cities || [])
+
+        // Auto-select if only one city exists
+        if (data.cities && data.cities.length === 1) {
+          setSelectedCityId(data.cities[0].id)
+          if (data.cities[0].areas && data.cities[0].areas.length === 1) {
+            setSelectedAreaId(data.cities[0].areas[0].id)
+            setShowCitySelection(false)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching cities:', error)
+    } finally {
+      setLoadingCities(false)
+    }
+  }
 
   const fetchTrips = async () => {
     try {
       // Fetch trips for the entire week
       const startDate = format(selectedWeekStart, 'yyyy-MM-dd')
-      const response = await fetch(`/api/trips?week=${startDate}`)
+      const response = await fetch(`/api/trips?week=${startDate}&cityId=${selectedCityId}&areaId=${selectedAreaId}`)
       if (response.ok) {
         const data = await response.json()
         setTrips(data)
@@ -273,6 +321,9 @@ export default function BookTrip() {
       const requestBody: any = {
         startTime: startTime.toISOString(),
         maxPassengers: 4,
+        cityId: selectedCityId,
+        areaId: selectedAreaId,
+        autoAssign: true, // Enable automatic driver assignment
       }
 
       // Check if destination has default duration (don't send endTime if it does)
@@ -471,11 +522,165 @@ export default function BookTrip() {
       </nav>
 
       <div className="max-w-full mx-auto p-6">
-        <div className="mb-6">
-          <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Book Your Journey</h1>
-            <p className="text-base text-gray-600 dark:text-gray-300">Select your drop off time and enjoy premium shuttle service</p>
+        {/* City/Area Selection */}
+        {showCitySelection && (
+          <div className="mb-8 max-w-4xl mx-auto">
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 p-8">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <span className="text-white text-3xl">📍</span>
+                </div>
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  Where are you traveling?
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Select your city and service area to view available trips
+                </p>
+              </div>
+
+              {loadingCities ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* City Selection */}
+                  <div>
+                    <label className="block text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3">
+                      Select City
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {cities.map((city) => (
+                        <button
+                          key={city.id}
+                          onClick={() => {
+                            setSelectedCityId(city.id)
+                            setSelectedAreaId('') // Reset area when city changes
+                          }}
+                          className={`p-6 rounded-xl border-2 transition-all duration-200 text-left ${
+                            selectedCityId === city.id
+                              ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-lg'
+                              : 'border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 hover:border-indigo-300 hover:shadow-md'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                              {city.name}
+                            </h3>
+                            {selectedCityId === city.id && (
+                              <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center">
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {city.areas.length} area{city.areas.length !== 1 ? 's' : ''} available
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Area Selection */}
+                  {selectedCityId && (
+                    <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+                      <label className="block text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3">
+                        Select Service Area
+                      </label>
+                      {cities.find(c => c.id === selectedCityId)?.areas.length === 0 ? (
+                        <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-xl p-6 text-center">
+                          <p className="text-yellow-800 dark:text-yellow-200 font-medium">
+                            No service areas available in this city yet.
+                          </p>
+                          <p className="text-sm text-yellow-600 dark:text-yellow-300 mt-2">
+                            Please contact support or choose a different city.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {cities.find(c => c.id === selectedCityId)?.areas.map((area) => (
+                            <button
+                              key={area.id}
+                              onClick={() => setSelectedAreaId(area.id)}
+                              className={`p-5 rounded-xl border-2 transition-all duration-200 text-left ${
+                                selectedAreaId === area.id
+                                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 shadow-lg'
+                                  : 'border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50 hover:border-purple-300 hover:shadow-md'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <h4 className="font-bold text-gray-900 dark:text-white mb-1">
+                                    {area.name}
+                                  </h4>
+                                  {area.driverCount !== undefined && (
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                      {area.driverCount} driver{area.driverCount !== 1 ? 's' : ''}
+                                    </p>
+                                  )}
+                                </div>
+                                {selectedAreaId === area.id && (
+                                  <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 ml-2">
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </div>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Continue Button */}
+                  {selectedCityId && selectedAreaId && (
+                    <div className="pt-6">
+                      <button
+                        onClick={() => setShowCitySelection(false)}
+                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 px-6 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl hover:from-indigo-700 hover:to-purple-700 transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-2"
+                      >
+                        <span>Continue to Booking</span>
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+        )}
+
+        {/* Only show booking interface if city/area selected */}
+        {!showCitySelection && selectedCityId && selectedAreaId && (
+          <>
+            <div className="mb-6">
+              <div className="text-center mb-6">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Book Your Journey</h1>
+                <p className="text-base text-gray-600 dark:text-gray-300">Select your drop off time and enjoy premium shuttle service</p>
+
+                {/* Show selected city/area */}
+                <div className="mt-4 flex items-center justify-center space-x-2">
+                  <div className="inline-flex items-center bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-4 py-2 rounded-lg font-medium">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {cities.find(c => c.id === selectedCityId)?.name} • {cities.find(c => c.id === selectedCityId)?.areas.find(a => a.id === selectedAreaId)?.name}
+                  </div>
+                  <button
+                    onClick={() => setShowCitySelection(true)}
+                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline"
+                  >
+                    Change
+                  </button>
+                </div>
+              </div>
           
           <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-xl shadow-lg p-4 border border-gray-200/50 dark:border-gray-700/50">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -584,103 +789,104 @@ export default function BookTrip() {
           </div>
         )}
 
-        {/* Booking Modal */}
-        <BookingModal
-          isOpen={showBookingModal}
-          onClose={() => {
-            setShowBookingModal(false)
-            setSelectedTrip(null)
-          }}
-          trip={selectedTrip}
-          riders={riders}
-          userCredits={userCredits}
-          onBookingSuccess={handleBookingSuccess}
-        />
+            {/* Booking Modal */}
+            <BookingModal
+              isOpen={showBookingModal}
+              onClose={() => {
+                setShowBookingModal(false)
+                setSelectedTrip(null)
+              }}
+              trip={selectedTrip}
+              riders={riders}
+              userCredits={userCredits}
+              onBookingSuccess={handleBookingSuccess}
+            />
 
-        {/* New Trip Modal */}
-        {showNewTripModal && selectedTimeSlot && (
-          <NewTripModal
-            isOpen={showNewTripModal}
-            onClose={() => {
-              setShowNewTripModal(false);
-              setSelectedTimeSlot(null);
-            }}
-            selectedDate={selectedTimeSlot.date}
-            selectedTime={selectedTimeSlot.time}
-            locations={locations}
-            riders={riders}
-            onCreateTrip={handleCreateTrip}
-          />
-        )}
+            {/* New Trip Modal */}
+            {showNewTripModal && selectedTimeSlot && (
+              <NewTripModal
+                isOpen={showNewTripModal}
+                onClose={() => {
+                  setShowNewTripModal(false);
+                  setSelectedTimeSlot(null);
+                }}
+                selectedDate={selectedTimeSlot.date}
+                selectedTime={selectedTimeSlot.time}
+                locations={locations}
+                riders={riders}
+                onCreateTrip={handleCreateTrip}
+              />
+            )}
 
-        {/* Credit Packages Modal */}
-        {showCreditModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Buy Credits</h3>
-                  <button
-                    onClick={() => setShowCreditModal(false)}
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {creditPackages.map((pkg) => (
-                    <div key={pkg.id} className={`border-2 rounded-xl p-6 transition-all duration-200 hover:shadow-lg ${
-                      pkg.isPopular 
-                        ? 'border-purple-300 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30' 
-                        : 'border-gray-200 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50'
-                    }`}>
-                      {pkg.isPopular && (
-                        <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full inline-block mb-3">
-                          🔥 MOST POPULAR
-                        </div>
-                      )}
-                      
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{pkg.name}</h3>
-                      
-                      <div className="text-center mb-4">
-                        <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                          {pkg.credits} Credits
-                        </div>
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                          R{pkg.price.toFixed(0)}
-                        </div>
-                      </div>
-
-
+            {/* Credit Packages Modal */}
+            {showCreditModal && (
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Buy Credits</h3>
                       <button
-                        onClick={() => purchasePackage(pkg.id)}
-                        className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
-                          pkg.isPopular
-                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600'
-                            : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700'
-                        }`}
+                        onClick={() => setShowCreditModal(false)}
+                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                       >
-                        Purchase Package
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                       </button>
                     </div>
-                  ))}
-                </div>
 
-                {creditPackages.length === 0 && (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <span className="text-3xl">💳</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {creditPackages.map((pkg) => (
+                        <div key={pkg.id} className={`border-2 rounded-xl p-6 transition-all duration-200 hover:shadow-lg ${
+                          pkg.isPopular
+                            ? 'border-purple-300 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30'
+                            : 'border-gray-200 dark:border-gray-600 bg-white/50 dark:bg-gray-700/50'
+                        }`}>
+                          {pkg.isPopular && (
+                            <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full inline-block mb-3">
+                              🔥 MOST POPULAR
+                            </div>
+                          )}
+
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{pkg.name}</h3>
+
+                          <div className="text-center mb-4">
+                            <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                              {pkg.credits} Credits
+                            </div>
+                            <div className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+                              R{pkg.price.toFixed(0)}
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => purchasePackage(pkg.id)}
+                            className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
+                              pkg.isPopular
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600'
+                                : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700'
+                            }`}
+                          >
+                            Purchase Package
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                    <p className="text-gray-500 dark:text-gray-400 font-medium">No credit packages available</p>
-                    <p className="text-sm text-gray-400 dark:text-gray-500">Contact support to set up credit packages</p>
+
+                    {creditPackages.length === 0 && (
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                          <span className="text-3xl">💳</span>
+                        </div>
+                        <p className="text-gray-500 dark:text-gray-400 font-medium">No credit packages available</p>
+                        <p className="text-sm text-gray-400 dark:text-gray-500">Contact support to set up credit packages</p>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

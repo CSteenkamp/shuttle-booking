@@ -34,6 +34,7 @@ model User {
   auditLogs               AuditLog[]
   savedAddresses          SavedAddress[]
   defaultPickupLocation   SavedAddress?       @relation("DefaultPickupLocation", fields: [defaultPickupLocationId], references: [id])
+  driverProfile           DriverProfile?
 
   @@map("users")
 }
@@ -104,14 +105,20 @@ model Location {
   isFrequent      Boolean        @default(false)
   category        String?        @default("other")
   status          LocationStatus @default(APPROVED)
+  // Multi-tenant fields
+  cityId          String?        // Optional: location can belong to a city
+  areaId          String?        // Optional: location can belong to an area
   // New pricing fields
   defaultDuration Int?           // Duration in minutes for trips to this destination
   baseCost        Int?           // Base cost in credits (R1 = 1 credit) for single passenger
   createdAt       DateTime       @default(now())
+  city            City?          @relation(fields: [cityId], references: [id])
+  area            Area?          @relation(fields: [areaId], references: [id])
   dropoffBookings Booking[]      @relation("DropoffLocation")
   pickupBookings  Booking[]      @relation("PickupLocation")
   trips           Trip[]
   pricingTiers    PricingTier[]
+  driverPricing   DriverPricingTier[]
 
   @@map("locations")
 }
@@ -124,12 +131,20 @@ model Trip {
   maxPassengers     Int        @default(4)
   currentPassengers Int        @default(0)
   status            TripStatus @default(SCHEDULED)
+  // Multi-tenant fields
+  cityId            String?    // Optional: trip belongs to a city
+  areaId            String?    // Optional: trip belongs to an area
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   bookings          Booking[]
   destination       Location   @relation(fields: [destinationId], references: [id])
+  city              City?      @relation(fields: [cityId], references: [id])
+  area              Area?      @relation(fields: [areaId], references: [id])
   notifications     Notification[]
+  assignments       TripAssignment[]
 
+  @@index([cityId, startTime])
+  @@index([areaId, startTime])
   @@map("trips")
 }
 
@@ -145,10 +160,16 @@ model Booking {
   creditsCost       Int           // Cost paid in credits (R1 = 1 credit)
   originalCost      Int?          // Original cost when first booked (for refund tracking)
   status            BookingStatus @default(CONFIRMED)
+  paymentStatus     String?       // PENDING, PAID, FAILED, CANCELLED, REFUNDED (for PayFast payments)
   notes             String?
   // Guest rider fields
   guestName         String?       // Name of guest rider (when riderId is null and this is a guest)
   guestPhone        String?       // Phone of guest rider
+  // Driver assignment (denormalized for performance)
+  assignedDriverId  String?       // Denormalized from TripAssignment for quick lookup
+  driverName        String?       // Cached driver name
+  driverPhone       String?       // Cached driver phone
+  vehicleInfo       String?       // Cached vehicle details
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   dropoffLocation   Location      @relation("DropoffLocation", fields: [dropoffLocationId], references: [id])
@@ -158,7 +179,9 @@ model Booking {
   trip              Trip          @relation(fields: [tripId], references: [id], onDelete: Cascade)
   user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   notifications     Notification[]
+  payment           Payment?      // One-to-one relation with Payment
 
+  @@index([assignedDriverId])
   @@map("bookings")
 }
 
@@ -200,12 +223,16 @@ model CreditPackage {
 
 enum UserRole {
   ADMIN
+  TOWN_ADMIN
+  DRIVER
   CUSTOMER
+  SUPPORT
 }
 
 enum UserStatus {
   ACTIVE
   SUSPENDED
+  PENDING_APPROVAL
 }
 
 enum TransactionType {
@@ -260,6 +287,44 @@ enum NotificationPriority {
 enum PaymentStatus {
   PENDING
   COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum CityStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+}
+
+enum AreaStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum DriverStatus {
+  PENDING
+  APPROVED
+  ACTIVE
+  SUSPENDED
+  REJECTED
+  INACTIVE
+}
+
+enum AssignmentStatus {
+  ASSIGNED
+  ACCEPTED
+  DECLINED
+  IN_PROGRESS
+  ARRIVED
+  COMPLETED
+  CANCELLED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
   FAILED
   CANCELLED
 }
@@ -410,25 +475,550 @@ model PaymentTransaction {
   payfastId        String?          // PayFast transaction reference
   payfastPaymentId String?          // PayFast payment_id from ITN
   status           PaymentStatus    @default(PENDING)
-  
+
   // PayFast specific fields
   merchantTxnId    String?          // Our internal transaction ID sent to PayFast
   signature        String?          // PayFast signature for verification
-  
+
   // ITN data
   itnData          Json?            // Store complete ITN payload for debugging
-  
+
   // Timestamps
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   completedAt      DateTime?        // When payment was completed
-  
+
   // Relations
   user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   package          CreditPackage?   @relation(fields: [packageId], references: [id], onDelete: SetNull)
-  
+
   @@index([userId, status])
   @@index([payfastId])
   @@index([status, createdAt])
   @@map("payment_transactions")
+}
+
+// ============================================================================
+// MULTI-TENANT & DRIVER MODELS
+// ============================================================================
+
+model City {
+  id              String      @id @default(cuid())
+  name            String      @unique
+  timezone        String      @default("Africa/Johannesburg")
+  status          CityStatus  @default(ACTIVE)
+
+  // Operating settings
+  operatingHours  Json?       // { "monday": {"start": "06:00", "end": "22:00"}, ... }
+  settings        Json?       // City-specific settings (default pricing, features, etc.)
+
+  // Metadata
+  country         String      @default("South Africa")
+  province        String?
+  description     String?
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  areas           Area[]
+  locations       Location[]
+  trips           Trip[]
+  townAdmins      TownAdmin[]
+
+  @@map("cities")
+}
+
+model Area {
+  id              String      @id @default(cuid())
+  cityId          String
+  name            String      // e.g., "Garsfontein", "Centurion East"
+  description     String?
+  status          AreaStatus  @default(ACTIVE)
+
+  // Geographic boundaries (GeoJSON polygon or simple bounds)
+  boundaries      Json?       // Store polygon coordinates or bounding box
+  centerLat       Float?
+  centerLng       Float?
+  radius          Float?      // Radius in km for simple circular areas
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  city            City        @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  driverAreas     DriverArea[]
+  locations       Location[]
+  trips           Trip[]
+
+  @@unique([cityId, name])
+  @@map("areas")
+}
+
+model DriverProfile {
+  id                  String              @id @default(cuid())
+  userId              String              @unique
+  status              DriverStatus        @default(PENDING)
+
+  // Vehicle & License Information
+  licenseNumber       String
+  licenseExpiry       DateTime?
+  vehicleMake         String
+  vehicleModel        String
+  vehicleYear         Int?
+  vehicleColor        String?
+  vehiclePlate        String
+  vehicleCapacity     Int                 @default(4)
+
+  // Documents (URLs to stored files)
+  licenseDocUrl       String?
+  idDocumentUrl       String?
+  vehicleRegUrl       String?
+  insuranceDocUrl     String?
+  policeCheckUrl      String?
+
+  // Rates & Pricing
+  baseRate            Int?                // Base fare in credits
+  perMinuteRate       Int?                // Credits per minute
+  perKmRate           Int?                // Credits per km
+  customRatesEnabled  Boolean             @default(false)
+  ratesApprovedAt     DateTime?
+  ratesApprovedBy     String?
+
+  // Availability & Preferences
+  isAvailable         Boolean             @default(true)
+  isOnline            Boolean             @default(false) // Phase 2: Real-time online status
+  maxTripsPerDay      Int?                @default(20)
+  preferredStartTime  String?             // "06:00"
+  preferredEndTime    String?             // "22:00"
+  availabilityHours   Json?               // Phase 2: { "monday": [{"start": "08:00", "end": "17:00"}], ... }
+
+  // Performance & Ratings
+  totalTrips          Int                 @default(0)
+  completedTrips      Int                 @default(0)
+  cancelledTrips      Int                 @default(0)
+  averageRating       Float?
+  totalEarnings       Int                 @default(0)
+
+  // Metadata
+  bio                 String?
+  emergencyContact    String?
+  notes               String?             // Admin notes
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  approvedAt          DateTime?
+  approvedBy          String?
+
+  // Relations
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  driverAreas         DriverArea[]
+  calendar            DriverCalendar?
+  calendarEvents      CalendarEvent[]     // Phase 2: Synced calendar events
+  tripAssignments     TripAssignment[]
+  earnings            DriverEarnings[]
+  customPricing       DriverPricingTier[]
+  badges              DriverBadge[]       // Phase 2: Earned badges
+
+  @@index([status])
+  @@index([isAvailable])
+  @@index([isOnline])                     // Phase 2: For finding online drivers
+  @@map("driver_profiles")
+}
+
+model DriverArea {
+  id              String          @id @default(cuid())
+  driverId        String
+  areaId          String
+  isPrimary       Boolean         @default(false)
+
+  createdAt       DateTime        @default(now())
+
+  driver          DriverProfile   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  area            Area            @relation(fields: [areaId], references: [id], onDelete: Cascade)
+
+  @@unique([driverId, areaId])
+  @@map("driver_areas")
+}
+
+model DriverCalendar {
+  id                  String          @id @default(cuid())
+  driverId            String          @unique
+
+  // OAuth & Calendar Integration
+  provider            String          // "google", "outlook", "apple"
+  calendarId          String?         // External calendar ID
+  accessToken         String?         @db.Text
+  refreshToken        String?         @db.Text
+  tokenExpiry         DateTime?
+
+  // Sync settings
+  syncEnabled         Boolean         @default(true)
+  lastSyncAt          DateTime?
+  syncStatus          String          @default("connected") // connected, error, disconnected
+  syncError           String?
+
+  // Calendar preferences
+  autoCreateEvents    Boolean         @default(true)
+  blockPersonalEvents Boolean         @default(true)
+  reminderMinutes     Int             @default(15)
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  driver              DriverProfile   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@map("driver_calendars")
+}
+
+model TripAssignment {
+  id              String              @id @default(cuid())
+  tripId          String
+  driverId        String
+  status          AssignmentStatus    @default(ASSIGNED)
+
+  // Assignment metadata
+  assignedBy      String?             // userId who assigned (null for auto-assignment)
+  assignmentType  String              @default("auto") // auto, manual, reassigned
+
+  // Driver response
+  acceptedAt      DateTime?
+  declinedAt      DateTime?
+  declineReason   String?
+
+  // Trip lifecycle
+  startedAt       DateTime?
+  arrivedAt       DateTime?
+  completedAt     DateTime?
+  cancelledAt     DateTime?
+  cancellationReason String?
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  trip            Trip                @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  driver          DriverProfile       @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([driverId, status])
+  @@index([status, createdAt])
+  @@map("trip_assignments")
+}
+
+model DriverEarnings {
+  id              String          @id @default(cuid())
+  driverId        String
+  tripId          String
+  bookingId       String?
+
+  // Earnings breakdown
+  baseAmount      Int             // Base fare earned
+  distanceAmount  Int             @default(0) // Distance-based earnings
+  timeAmount      Int             @default(0) // Time-based earnings
+  totalAmount     Int             // Total earned for this trip
+
+  // Commission & Payout
+  platformFee     Int             @default(0) // Platform commission
+  netAmount       Int             // Amount after commission
+  payoutStatus    PayoutStatus    @default(PENDING)
+  payoutId        String?         // Links to DriverPayout when processed
+  paidAt          DateTime?
+
+  // Metadata
+  tripDate        DateTime
+  passengerCount  Int?
+  distance        Float?          // in km
+  duration        Int?            // in minutes
+
+  createdAt       DateTime        @default(now())
+
+  driver          DriverProfile   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId, payoutStatus])
+  @@index([tripDate])
+  @@map("driver_earnings")
+}
+
+model DriverPricingTier {
+  id              String          @id @default(cuid())
+  driverId        String
+  locationId      String
+  passengerCount  Int
+  costPerPerson   Int
+
+  // Approval workflow
+  status          String          @default("pending") // pending, approved, rejected
+  approvedAt      DateTime?
+  approvedBy      String?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  driver          DriverProfile   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  location        Location        @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([driverId, locationId, passengerCount])
+  @@map("driver_pricing_tiers")
+}
+
+model TownAdmin {
+  id          String      @id @default(cuid())
+  userId      String
+  cityId      String
+
+  // Permissions
+  canApproveDrivers   Boolean @default(true)
+  canManagePricing    Boolean @default(true)
+  canViewReports      Boolean @default(true)
+  canManageTrips      Boolean @default(true)
+
+  createdAt   DateTime    @default(now())
+  assignedBy  String?
+
+  city        City        @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cityId])
+  @@map("town_admins")
+}
+
+// ============================================================================
+// PHASE 2 MODELS - Driver Operations & Quality
+// ============================================================================
+
+model CalendarEvent {
+  id              String          @id @default(cuid())
+  driverId        String
+
+  // Google Calendar event details
+  externalEventId String          // Google Calendar event ID
+  summary         String          // Event title
+  description     String?
+
+  // Time
+  startTime       DateTime
+  endTime         DateTime
+  allDay          Boolean         @default(false)
+
+  // Status
+  status          String          @default("confirmed") // confirmed, cancelled, tentative
+  isBlocking      Boolean         @default(true) // Does this block driver availability
+
+  // Metadata
+  lastSyncedAt    DateTime        @default(now())
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  driver          DriverProfile   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@unique([driverId, externalEventId])
+  @@index([driverId, startTime, endTime])
+  @@map("calendar_events")
+}
+
+model Rating {
+  id              String          @id @default(cuid())
+  bookingId       String
+  tripId          String
+
+  // Who rated whom
+  raterId         String          // User who gave the rating
+  ratedUserId     String          // User who received the rating
+  ratedDriverId   String?         // If rating a driver
+
+  // Rating type
+  role            RatingRole      // CUSTOMER_RATING_DRIVER or DRIVER_RATING_CUSTOMER
+
+  // Rating content
+  stars           Int             // 1-5 stars
+  comment         String?
+  tags            String[]        // ["punctual", "friendly", "clean_vehicle"]
+
+  // Moderation
+  isReported      Boolean         @default(false)
+  reportReason    String?
+  adminReviewed   Boolean         @default(false)
+  adminResponse   String?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([ratedDriverId, stars])
+  @@index([raterId, createdAt])
+  @@index([tripId])
+  @@map("ratings")
+}
+
+model PushSubscription {
+  id              String          @id @default(cuid())
+  userId          String
+
+  // Web Push subscription data
+  endpoint        String          @unique
+  p256dh          String          // Public key
+  auth            String          // Auth secret
+
+  // Device info
+  userAgent       String?
+  platform        String?         // "web", "mobile"
+
+  // Status
+  isActive        Boolean         @default(true)
+  lastUsedAt      DateTime        @default(now())
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId, isActive])
+  @@map("push_subscriptions")
+}
+
+model TripStatusHistory {
+  id              String              @id @default(cuid())
+  tripId          String
+  assignmentId    String?             // Optional: link to assignment if status change relates to driver
+
+  // Status change
+  fromStatus      AssignmentStatus?   // Previous status (null if first status)
+  toStatus        AssignmentStatus    // New status
+
+  // Context
+  changedBy       String?             // userId who made the change
+  note            String?             // Additional context
+  location        Json?               // GPS coordinates if available
+
+  createdAt       DateTime            @default(now())
+
+  @@index([tripId, createdAt])
+  @@index([assignmentId, createdAt])
+  @@map("trip_status_history")
+}
+
+model DriverBadge {
+  id              String          @id @default(cuid())
+  driverId        String
+
+  // Badge details
+  badgeType       BadgeType
+  name            String          // "100 Trips", "5 Star Driver", "Perfect Week"
+  description     String?
+  icon            String?         // Icon name or URL
+
+  // Earned date
+  earnedAt        DateTime        @default(now())
+
+  driver          DriverProfile   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId, badgeType])
+  @@map("driver_badges")
+}
+
+model DriverPayout {
+  id              String          @id @default(cuid())
+  driverId        String
+
+  // Payout period
+  periodStart     DateTime
+  periodEnd       DateTime
+
+  // Amounts
+  amount          Int             // Total payout amount (for backward compatibility)
+  totalEarnings   Int             // Total earned in period
+  platformFee     Int             // Total commission
+  netAmount       Int             // Amount to be paid
+
+  // Trip count
+  tripCount       Int
+
+  // Banking details (snapshot at payout time)
+  bankName        String?
+  accountNumber   String?
+  accountHolder   String?
+  paymentMethod   String?         // BANK_TRANSFER, PAYFAST, etc.
+
+  // Status
+  status          PayoutStatus    @default(PENDING)
+  processedAt     DateTime?
+  paidAt          DateTime?
+
+  // Reference
+  reference       String?         // Payment reference
+  paymentReference String?        // Bank transfer reference (legacy)
+  notes           String?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([driverId, status])
+  @@index([periodStart, periodEnd])
+  @@index([status, createdAt])
+  @@map("driver_payouts")
+}
+
+model Payment {
+  id              String          @id @default(cuid())
+  bookingId       String          @unique
+
+  // Payment details
+  amount          Float           // Payment amount in Rands
+  status          PaymentStatus   @default(PENDING)
+  paymentMethod   String          // PAYFAST, BANK_TRANSFER, etc.
+
+  // PayFast transaction details
+  transactionId   String?         // PayFast payment_id
+  paidAt          DateTime?
+
+  // Metadata
+  metadata        Json?           // Store ITN data, etc.
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  booking         Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  refunds         Refund[]
+
+  @@index([bookingId])
+  @@index([status, createdAt])
+  @@map("payments")
+}
+
+model Refund {
+  id              String          @id @default(cuid())
+  paymentId       String
+
+  // Refund details
+  amount          Float           // Refund amount in Rands
+  reason          String
+  status          String          @default("PENDING") // PENDING, COMPLETED, FAILED
+
+  // Refund processing
+  processedAt     DateTime?
+  transactionId   String?         // PayFast refund reference
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  payment         Payment         @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@index([status, createdAt])
+  @@map("refunds")
+}
+
+// ============================================================================
+// PHASE 2 ENUMS
+// ============================================================================
+
+enum RatingRole {
+  CUSTOMER_RATING_DRIVER
+  DRIVER_RATING_CUSTOMER
+}
+
+enum BadgeType {
+  TRIPS_MILESTONE      // 10, 50, 100, 500, 1000 trips
+  RATING_ACHIEVEMENT   // 5-star driver, 100 five-star trips
+  STREAK_ACHIEVEMENT   // Perfect week, perfect month
+  EARNINGS_MILESTONE   // R1000, R10000, R50000 earned
+  SPECIAL_AWARD        // Admin-awarded special badges
 }

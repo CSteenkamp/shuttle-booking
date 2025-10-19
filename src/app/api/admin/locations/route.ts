@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from '@/lib/auth'
-
 import { prisma } from '@/lib/prisma'
+import { verifyAddress } from '@/lib/geocoding'
 
 export async function GET(request: NextRequest) {
   try {
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession()
-    
+
     if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -52,7 +52,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, address, category, isFrequent } = await request.json()
+    const {
+      name,
+      address,
+      category,
+      isFrequent,
+      cityId,
+      areaId,
+      defaultDuration,
+      baseCost,
+      skipVerification
+    } = await request.json()
 
     if (!name || !address) {
       return NextResponse.json(
@@ -78,15 +88,44 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Automatic address verification
+    let latitude: number | undefined
+    let longitude: number | undefined
+    let verifiedAddress = address.trim()
+    let verificationWarning: string | undefined
+
+    if (!skipVerification) {
+      console.log(`🔍 Verifying address: ${address}`)
+      const verification = await verifyAddress(address, 'ZA')
+
+      if (verification.success && verification.address) {
+        latitude = verification.address.latitude
+        longitude = verification.address.longitude
+        verifiedAddress = verification.address.formattedAddress
+        console.log(`✅ Address verified: ${verifiedAddress} (${latitude}, ${longitude})`)
+      } else {
+        verificationWarning = verification.error || 'Address could not be verified automatically'
+        console.warn(`⚠️ Address verification failed: ${verificationWarning}`)
+      }
+    }
+
     const location = await prisma.location.create({
       data: {
         name: name.trim(),
-        address: address.trim(),
+        address: verifiedAddress,
+        latitude,
+        longitude,
         category: category || 'other',
         isFrequent: isFrequent || false,
+        cityId: cityId || null,
+        areaId: areaId || null,
+        defaultDuration: defaultDuration || null,
+        baseCost: baseCost || null,
         status: 'APPROVED' // Admin created locations are auto-approved
       },
       include: {
+        city: true,
+        area: true,
         _count: {
           select: {
             trips: true,
@@ -98,7 +137,10 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json(location)
+    return NextResponse.json({
+      ...location,
+      verificationWarning
+    })
   } catch (error) {
     console.error('Error creating location:', error)
     return NextResponse.json(
