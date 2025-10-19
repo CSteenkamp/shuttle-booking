@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 /**
  * GET /api/geocoding/autocomplete
  *
- * Provides address autocomplete suggestions using geocoding services
+ * Provides address autocomplete suggestions using Mapbox Search API
  * Returns formatted addresses with coordinates for easy selection
  */
 export async function GET(request: NextRequest) {
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const suggestions = await fetchAddressSuggestions(query, city);
+    const suggestions = await fetchMapboxSuggestions(query, city);
 
     return NextResponse.json({
       success: true,
@@ -36,116 +36,72 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Fetch address suggestions from multiple geocoding providers
+ * Fetch address suggestions from Mapbox Search API
+ * Mapbox provides excellent autocomplete with real-time suggestions
  */
-async function fetchAddressSuggestions(query: string, city: string | null = null) {
-  const suggestions: any[] = [];
+async function fetchMapboxSuggestions(query: string, city: string | null = null) {
+  const apiKey = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
-  // Try Google Maps Geocoding API first (if available)
-  if (process.env.GOOGLE_MAPS_API_KEY) {
-    try {
-      const googleResults = await fetchGoogleSuggestions(query, city);
-      suggestions.push(...googleResults);
-    } catch (error) {
-      console.log('Google Maps autocomplete failed, trying fallback');
-    }
-  }
-
-  // If no results from Google, try OpenStreetMap Nominatim
-  if (suggestions.length === 0) {
-    try {
-      const nominatimResults = await fetchNominatimSuggestions(query, city);
-      suggestions.push(...nominatimResults);
-    } catch (error) {
-      console.log('Nominatim autocomplete failed');
-    }
-  }
-
-  // Deduplicate and limit results
-  return deduplicateSuggestions(suggestions).slice(0, 10);
-}
-
-/**
- * Fetch suggestions from Google Maps Geocoding API
- */
-async function fetchGoogleSuggestions(query: string, city: string | null = null) {
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-  if (!apiKey) return [];
-
-  // If city is provided, use it; otherwise use "South Africa"
-  const location = city || 'South Africa';
-  const searchQuery = query.includes(location) ? query : `${query}, ${location}`;
-
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(searchQuery)}&key=${apiKey}&region=za`;
-
-  const response = await fetch(url);
-  const data = await response.json();
-
-  if (data.status !== 'OK' || !data.results) {
+  if (!apiKey) {
+    console.error('Mapbox API key not configured');
     return [];
   }
 
-  return data.results.map((result: any) => ({
-    formattedAddress: result.formatted_address,
-    latitude: result.geometry.location.lat,
-    longitude: result.geometry.location.lng,
-    street: result.address_components?.find((c: any) => c.types.includes('route'))?.long_name,
-    city: result.address_components?.find((c: any) => c.types.includes('locality'))?.long_name,
-    postalCode: result.address_components?.find((c: any) => c.types.includes('postal_code'))?.long_name,
-  }));
-}
+  try {
+    // Build search query with city context if provided
+    const searchQuery = city ? `${query}, ${city}` : query;
 
-/**
- * Fetch suggestions from OpenStreetMap Nominatim
- */
-async function fetchNominatimSuggestions(query: string, city: string | null = null) {
-  // If city is provided, use it; otherwise use "South Africa"
-  const location = city || 'South Africa';
-  const searchQuery = query.includes(location) ? query : `${query}, ${location}`;
+    // Mapbox Geocoding API endpoint
+    // Using forward geocoding with autocomplete
+    const url = new URL(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json`);
 
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&countrycodes=za&limit=10&addressdetails=1`;
+    // Add query parameters
+    url.searchParams.append('access_token', apiKey);
+    url.searchParams.append('country', 'ZA'); // Limit to South Africa
+    url.searchParams.append('limit', '10');
+    url.searchParams.append('autocomplete', 'true');
+    url.searchParams.append('types', 'address,poi'); // Include addresses and points of interest
 
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'TjoefTjaf-Shuttle-Booking/1.0'
+    // If city is provided, use it as proximity bias
+    if (city) {
+      // Add language for better results
+      url.searchParams.append('language', 'en');
     }
-  });
 
-  if (!response.ok) {
+    const response = await fetch(url.toString());
+
+    if (!response.ok) {
+      console.error('Mapbox API error:', response.status, response.statusText);
+      return [];
+    }
+
+    const data = await response.json();
+
+    if (!data.features || data.features.length === 0) {
+      return [];
+    }
+
+    // Transform Mapbox results to our format
+    return data.features.map((feature: any) => {
+      // Extract address components
+      const context = feature.context || [];
+      const placeContext = context.find((c: any) => c.id.startsWith('place'));
+      const postcodeContext = context.find((c: any) => c.id.startsWith('postcode'));
+      const regionContext = context.find((c: any) => c.id.startsWith('region'));
+
+      return {
+        formattedAddress: feature.place_name,
+        latitude: feature.center[1], // Mapbox uses [lng, lat]
+        longitude: feature.center[0],
+        street: feature.text,
+        city: placeContext?.text || city,
+        postalCode: postcodeContext?.text,
+        region: regionContext?.text,
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching Mapbox suggestions:', error);
     return [];
   }
-
-  const data = await response.json();
-
-  return data.map((result: any) => ({
-    formattedAddress: result.display_name,
-    latitude: parseFloat(result.lat),
-    longitude: parseFloat(result.lon),
-    street: result.address?.road,
-    city: result.address?.city || result.address?.town || result.address?.village,
-    postalCode: result.address?.postcode,
-  }));
 }
 
-/**
- * Remove duplicate suggestions based on formatted address similarity
- */
-function deduplicateSuggestions(suggestions: any[]) {
-  const seen = new Set<string>();
-  const unique: any[] = [];
-
-  for (const suggestion of suggestions) {
-    // Normalize address for comparison (lowercase, remove extra spaces)
-    const normalized = suggestion.formattedAddress
-      .toLowerCase()
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    if (!seen.has(normalized)) {
-      seen.add(normalized);
-      unique.push(suggestion);
-    }
-  }
-
-  return unique;
-}
