@@ -45,6 +45,7 @@ interface NewTripModalProps {
   selectedTime: string;
   locations: Location[];
   riders: Rider[];
+  cityName?: string; // City name to limit address autocomplete
   onCreateTrip: (tripData: {
     destination: string;
     customDestination?: string;
@@ -61,6 +62,7 @@ export default function NewTripModal({
   selectedTime,
   locations,
   riders,
+  cityName,
   onCreateTrip
 }: NewTripModalProps) {
   const [destination, setDestination] = useState('');
@@ -285,8 +287,9 @@ export default function NewTripModal({
                 setPickupAddress(address);
                 setPickupVerified(verified);
               }}
-              placeholder="Start typing your address... (e.g., 11 Tarentaal)"
+              placeholder={cityName ? `Start typing your address in ${cityName}...` : "Start typing your address..."}
               required
+              city={cityName}
             />
             {pickupAddress && pickupVerified && (
               <div className="mt-2 flex items-center space-x-2 text-xs text-green-600 dark:text-green-400">

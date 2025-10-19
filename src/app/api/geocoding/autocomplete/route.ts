@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('query');
+    const city = searchParams.get('city'); // Optional city to limit search
 
     if (!query || query.length < 3) {
       return NextResponse.json({
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const suggestions = await fetchAddressSuggestions(query);
+    const suggestions = await fetchAddressSuggestions(query, city);
 
     return NextResponse.json({
       success: true,
@@ -37,13 +38,13 @@ export async function GET(request: NextRequest) {
 /**
  * Fetch address suggestions from multiple geocoding providers
  */
-async function fetchAddressSuggestions(query: string) {
+async function fetchAddressSuggestions(query: string, city: string | null = null) {
   const suggestions: any[] = [];
 
   // Try Google Maps Geocoding API first (if available)
   if (process.env.GOOGLE_MAPS_API_KEY) {
     try {
-      const googleResults = await fetchGoogleSuggestions(query);
+      const googleResults = await fetchGoogleSuggestions(query, city);
       suggestions.push(...googleResults);
     } catch (error) {
       console.log('Google Maps autocomplete failed, trying fallback');
@@ -53,7 +54,7 @@ async function fetchAddressSuggestions(query: string) {
   // If no results from Google, try OpenStreetMap Nominatim
   if (suggestions.length === 0) {
     try {
-      const nominatimResults = await fetchNominatimSuggestions(query);
+      const nominatimResults = await fetchNominatimSuggestions(query, city);
       suggestions.push(...nominatimResults);
     } catch (error) {
       console.log('Nominatim autocomplete failed');
@@ -67,12 +68,13 @@ async function fetchAddressSuggestions(query: string) {
 /**
  * Fetch suggestions from Google Maps Geocoding API
  */
-async function fetchGoogleSuggestions(query: string) {
+async function fetchGoogleSuggestions(query: string, city: string | null = null) {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) return [];
 
-  // Add "South Africa" to improve relevance
-  const searchQuery = query.includes('South Africa') ? query : `${query}, South Africa`;
+  // If city is provided, use it; otherwise use "South Africa"
+  const location = city || 'South Africa';
+  const searchQuery = query.includes(location) ? query : `${query}, ${location}`;
 
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(searchQuery)}&key=${apiKey}&region=za`;
 
@@ -96,9 +98,10 @@ async function fetchGoogleSuggestions(query: string) {
 /**
  * Fetch suggestions from OpenStreetMap Nominatim
  */
-async function fetchNominatimSuggestions(query: string) {
-  // Add "South Africa" to improve relevance
-  const searchQuery = query.includes('South Africa') ? query : `${query}, South Africa`;
+async function fetchNominatimSuggestions(query: string, city: string | null = null) {
+  // If city is provided, use it; otherwise use "South Africa"
+  const location = city || 'South Africa';
+  const searchQuery = query.includes(location) ? query : `${query}, ${location}`;
 
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&countrycodes=za&limit=10&addressdetails=1`;
 

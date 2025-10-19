@@ -814,6 +814,7 @@ export default function BookTrip() {
                 selectedTime={selectedTimeSlot.time}
                 locations={locations}
                 riders={riders}
+                cityName={cities.find(c => c.id === selectedCityId)?.name}
                 onCreateTrip={handleCreateTrip}
               />
             )}

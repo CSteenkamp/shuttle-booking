@@ -17,6 +17,7 @@ interface AddressAutocompleteProps {
   placeholder?: string;
   required?: boolean;
   className?: string;
+  city?: string; // City to limit address search
 }
 
 export default function AddressAutocomplete({
@@ -24,7 +25,8 @@ export default function AddressAutocomplete({
   onChange,
   placeholder = 'Start typing an address...',
   required = false,
-  className = ''
+  className = '',
+  city
 }: AddressAutocompleteProps) {
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -43,7 +45,11 @@ export default function AddressAutocomplete({
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/geocoding/autocomplete?query=${encodeURIComponent(query)}`);
+      const url = city
+        ? `/api/geocoding/autocomplete?query=${encodeURIComponent(query)}&city=${encodeURIComponent(city)}`
+        : `/api/geocoding/autocomplete?query=${encodeURIComponent(query)}`;
+
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.suggestions) {
